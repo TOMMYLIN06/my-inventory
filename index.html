@@ -1,3 +1,4 @@
+```html
 <!DOCTYPE html>
 <html lang="zh-Hant-TW">
 <head>
@@ -21,6 +22,7 @@
 
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; }
     body { background-color: var(--bg-main); color: var(--text-main); min-height: 100vh; display: flex; flex-direction: column; }
+    a { text-decoration: none; }
 
     header {
       background-color: var(--slate-dark); color: white; padding: 1rem 1.5rem;
@@ -167,19 +169,19 @@
 
     /* Login Screen styles */
     .auth-container { max-width: 400px; margin: 4rem auto; background: white; border-radius: 20px; padding: 2rem; box-shadow: 0 10px 25px rgba(0,0,0,0.05); text-align: center;}
-    .auth-title { font-size: 1.5rem; font-weight: 800; margin-bottom: 1.5rem; color: var(--slate-dark); }
+    .auth-title { font-size: 1.5rem; font-weight: 800; margin-bottom: 0.5rem; color: var(--slate-dark); }
     .divider { display: flex; align-items: center; text-align: center; margin: 1.5rem 0; color: var(--text-muted); font-size: 0.8rem; }
     .divider::before, .divider::after { content: ''; flex: 1; border-bottom: 1px solid var(--border-color); }
     .divider:not(:empty)::before { margin-right: .5em; }
     .divider:not(:empty)::after { margin-left: .5em; }
     
-    /* 關聯包裝 UI */
     .sub-barcode-item { display: flex; justify-content: space-between; align-items: center; background: white; border: 1px solid var(--border-color); padding: 0.5rem; border-radius: 8px; font-size: 0.8rem; margin-bottom: 0.4rem;}
-
-    /* 照片上傳 UI */
     .upload-box { background-color: #f8fafc; border: 2px dashed var(--border-color); border-radius: 12px; padding: 1.5rem; text-align: center; cursor: pointer; transition: all 0.2s; color: var(--text-muted); font-weight: 700; font-size: 0.85rem; }
     .upload-box:hover { border-color: var(--primary); color: var(--primary); background-color: #e0e7ff; }
     
+    .web-link-badge { background-color: rgba(255,255,255,0.1); color: white; padding: 0.4rem 0.8rem; border-radius: 8px; font-size: 0.75rem; font-weight: 700; text-decoration: none; border: 1px solid rgba(255,255,255,0.2); transition: all 0.2s; display: flex; align-items: center; gap: 0.4rem; }
+    .web-link-badge:hover { background-color: rgba(255,255,255,0.2); border-color: white; }
+
     footer { background-color: #0f172a; color: #64748b; text-align: center; padding: 1rem; font-size: 0.75rem; border-top: 1px solid #1e293b; margin-top: auto; }
   </style>
 </head>
@@ -203,6 +205,9 @@
       </div>
 
       <div class="header-actions" id="header-actions-area" style="display: none;">
+        <a href="https://tommylin06.github.io/my-inventory/" target="_blank" class="web-link-badge" title="前往線上網頁版">
+          🌐 前往網頁版
+        </a>
         <div class="scene-selector-wrapper">
           <span style="font-size: 0.75rem; color: #94a3b8; font-weight:700">🎬 場景：</span>
           <select id="header-scene-select" onchange="window.handleSceneSwitch(this.value)" class="scene-select"></select>
@@ -212,19 +217,35 @@
         </div>
         <div class="user-profile" id="user-profile">
           <span id="user-email">使用者</span>
-          <button onclick="window.logoutUser()" class="btn btn-secondary" style="padding: 0.2rem 0.5rem; font-size: 0.7rem; margin-left: 0.5rem;">登出</button>
+          <button id="logout-btn" onclick="window.logoutUser()" class="btn btn-secondary" style="padding: 0.2rem 0.5rem; font-size: 0.7rem; margin-left: 0.5rem; color: var(--text-main);">登出</button>
         </div>
       </div>
     </div>
   </header>
 
+  <!-- 🚀 防止白畫面的載入中提示 -->
+  <div id="loading-screen" style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 80vh; background: var(--bg-main);">
+    <div class="pulse-dot" style="width: 40px; height: 40px; margin-bottom: 1.5rem; background-color: var(--primary);"></div>
+    <h2 style="color: var(--slate-dark); font-size: 1.25rem; font-weight: 800; margin-bottom: 0.5rem;">系統初始化中...</h2>
+    <p style="color: var(--text-muted); font-size: 0.85rem;">正在建立連線，請稍候</p>
+  </div>
+
   <!-- 登入與註冊介面 -->
   <div id="auth-screen" style="display: none;">
+    <div id="local-web-alert" style="display: none; max-width: 400px; margin: 2rem auto -2rem auto; background: #e0e7ff; border: 1px solid #c7d2fe; padding: 1rem; border-radius: 12px; text-align: center;">
+      <p style="font-size: 0.85rem; color: var(--primary); font-weight: 700; margin-bottom: 0.5rem;">您目前開啟的是單機下載版 (HTML)</p>
+      <p style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 0.75rem;">強烈建議在有網路時，使用線上版以獲得完整登入體驗：</p>
+      <a href="https://tommylin06.github.io/my-inventory/" target="_blank" class="btn btn-primary" style="display: inline-flex; font-size: 0.8rem;">👉 前往 GitHub 網頁版</a>
+    </div>
+
     <div class="auth-container">
       <div class="logo-icon" style="width: 56px; height: 56px; margin: 0 auto 1rem auto;">
         <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path></svg>
       </div>
       <h2 class="auth-title">登入庫存系統</h2>
+      <p style="font-size: 0.75rem; color: var(--rose); margin-bottom: 1rem; line-height: 1.4;">
+        ⚠️ 若您使用 LINE 開啟本網頁，<br>請點選右上角「以預設瀏覽器開啟」
+      </p>
       
       <div class="form-group" style="text-align: left;">
         <label class="form-label">電子信箱</label>
@@ -242,9 +263,15 @@
 
       <div class="divider">或</div>
 
-      <button onclick="window.loginWithGoogle()" class="btn btn-secondary" style="width: 100%; padding: 0.75rem; border-color: #cbd5e1; display:flex; align-items:center; justify-content:center; gap:0.5rem">
+      <button id="google-login-btn" onclick="window.loginWithGoogle()" class="btn btn-secondary" style="width: 100%; padding: 0.75rem; border-color: #cbd5e1; display:flex; align-items:center; justify-content:center; gap:0.5rem">
         <svg width="18" height="18" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
-        使用 Google 帳號登入
+        <span id="google-btn-text">使用 Google 帳號登入</span>
+      </button>
+
+      <div class="divider" style="margin-top: 2rem;">無網路/下載檔專用</div>
+
+      <button onclick="window.startLocalMode()" class="btn btn-emerald" style="width: 100%; padding: 0.75rem; display:flex; align-items:center; justify-content:center; gap:0.5rem">
+        💻 進入本地單機模式 (免登入)
       </button>
     </div>
   </div>
@@ -297,6 +324,10 @@
       <button onclick="window.switchTab('history')" id="nav-history" class="nav-btn">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>歷史日誌
       </button>
+      
+      <a href="https://tommylin06.github.io/my-inventory/" target="_blank" class="nav-btn" style="color: var(--primary); background: #e0e7ff; margin-top: 1rem; text-decoration: none;">
+        🌐 前往線上網頁版
+      </a>
     </aside>
 
     <main class="content-panel">
@@ -389,11 +420,14 @@
         </div>
         
         <div style="background-color: #f1f5f9; padding: 1.25rem; border-radius: 16px; margin-top: 1.5rem">
-          <h3 style="font-size: 1rem; font-weight: 800; margin-bottom: 0.4rem;">📊 備份與資料轉移</h3>
+          <h3 style="font-size: 1rem; font-weight: 800; margin-bottom: 0.4rem;">📊 備份與合併資料 (單機神隊友)</h3>
+          <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 1rem; line-height: 1.4;">
+            💡 **單機/網頁版資料合併教學：** 如果您曾在單機版盤點資料，請在這裡點擊「📦 匯出 JSON」。接著打開您的網頁版，在這裡點擊「📥 匯入 JSON」，系統將會智慧為您合併或覆蓋資料！
+          </p>
           <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
             <button onclick="window.openExportModal()" class="btn btn-primary" style="font-size: 0.75rem">📦 匯出 JSON 備份檔...</button>
             <label class="btn btn-secondary" style="font-size: 0.75rem; cursor: pointer">
-              📥 匯入 JSON (不會覆蓋現有資料)
+              📥 匯入 JSON 合併檔案
               <input type="file" id="import-json-file" accept=".json" onchange="window.importJSONBackup(event)" style="display:none">
             </label>
             <button onclick="window.exportExcelCSV()" class="btn btn-emerald" style="font-size: 0.75rem">📊 匯出 Excel CSV 資料表</button>
@@ -430,7 +464,6 @@
       <div id="edit-form-wrap">
         <input type="hidden" id="edit-item-id">
         
-        <!-- 📷 圖片上傳區塊 -->
         <div class="form-group" style="display:flex; gap:1rem; margin-bottom: 1.5rem;">
           <div style="flex:1;">
             <label class="form-label">主要條碼 *</label>
@@ -493,7 +526,6 @@
     </div>
   </div>
 
-  <!-- 快捷領用對話框 -->
   <div id="modal-use" class="modal-overlay">
     <div class="modal-box">
       <div class="modal-header">
@@ -544,6 +576,20 @@
     </div>
   </div>
 
+  <!-- 🌟 新增：匯入衝突選擇 Modal -->
+  <div id="modal-import-conflict" class="modal-overlay">
+    <div class="modal-box" style="max-width: 420px; text-align: center;">
+      <h3 class="modal-title" style="margin-bottom: 0.5rem; border: none; color: var(--rose);">⚠️ 發現同名場景</h3>
+      <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1.5rem;" id="import-conflict-msg">您匯入的資料包含系統內已存在的場景名稱，請問要如何處理？</p>
+      <div style="display:flex; flex-direction:column; gap: 0.75rem;">
+        <button onclick="window.processImport('merge')" class="btn btn-primary" style="justify-content:center; padding:1rem; font-size: 0.9rem;">🔄 智慧合併<br><span style="font-size:0.7rem; font-weight:normal;">新增缺少的，若條碼相同則更新資料</span></button>
+        <button onclick="window.processImport('overwrite')" class="btn btn-rose" style="justify-content:center; padding:1rem; font-size: 0.9rem;">⚠️ 完全覆蓋<br><span style="font-size:0.7rem; font-weight:normal;">刪除舊資料，以剛上傳的檔案完全替換</span></button>
+        <button onclick="window.processImport('rename')" class="btn btn-emerald" style="justify-content:center; padding:1rem; font-size: 0.9rem;">📄 另存新檔<br><span style="font-size:0.7rem; font-weight:normal;">保留原本的資料，匯入的變成全新場景</span></button>
+      </div>
+      <button onclick="window.closeModal('modal-import-conflict')" class="btn btn-secondary" style="width:100%; justify-content:center; margin-top:1rem">取消匯入</button>
+    </div>
+  </div>
+
   <div id="modal-new-barcode-wizard" class="modal-overlay">
     <div class="modal-box">
       <div class="modal-header">
@@ -569,8 +615,8 @@
   </div>
 
   <!-- JavaScript 邏輯區 -->
-  <script type="module">
-    // === 雲端同步設定區 (替換為您專屬的 Firebase 設定) ===
+  <script>
+    // 🌟 改變載入方式：將靜態 Import 改為動態，避免網路受限時白畫面崩潰
     const firebaseConfig = {
       apiKey: "AIzaSyCY3z9TBJ5PV-c2psZ1OYSV0Y99hjhaHps",
       authDomain: "myinventory-438dc.firebaseapp.com",
@@ -580,26 +626,15 @@
       appId: "1:875600182897:web:1e448eacd53e078cda65d0"
     };
 
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-    import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, GoogleAuthProvider, signInWithPopup, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-    import { getFirestore, doc, setDoc, deleteDoc, collection, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-    
-    let app, auth, db;
+    // 宣告 Firebase 變數
+    let app, auth, db, googleProvider;
+    let signInWithEmailAndPassword, createUserWithEmailAndPassword, GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult, signOut;
+    let doc, setDoc, deleteDoc, collection, onSnapshot;
+
     let userId = null;
     let unsubscribeFirestore = null;
     let isOfflineMode = false;
-    const googleProvider = new GoogleAuthProvider();
 
-    try {
-      app = initializeApp(firebaseConfig);
-      auth = getAuth(app);
-      db = getFirestore(app);
-    } catch(e) { 
-      console.warn("Firebase 初始化失敗，將使用本地模式", e); 
-      isOfflineMode = true; 
-    }
-
-    // --- 1. 狀態與常數 ---
     let appState = { scenes: [], currentScene: "", data: {} };
     let currentTab = 'inventory';
     let currentScanMode = 'in';
@@ -607,18 +642,69 @@
     let deleteIdTemp = '';
     let scannedNewBarcodeTemp = '';
     let tempEditBarcodes = []; 
-    let selectedImageBase64 = ''; // 新增：用於儲存當前選擇的照片
+    let selectedImageBase64 = ''; 
+    let pendingImportData = null; // 用於儲存匯入時的暫存資料
 
-    // --- 2. 初始化與 Auth 邏輯 ---
-    document.addEventListener('DOMContentLoaded', () => {
+    document.addEventListener('DOMContentLoaded', async () => {
       setupGlobalScannerHook();
 
-      if (!isOfflineMode && auth) {
-        onAuthStateChanged(auth, (user) => {
+      // 🔍 偵測是否為「直接點開的 HTML 單機檔案」
+      const isLocalFile = window.location.protocol === 'file:';
+      if (isLocalFile) {
+        const alertBox = document.getElementById('local-web-alert');
+        if (alertBox) alertBox.style.display = 'block';
+
+        const googleBtn = document.getElementById('google-login-btn');
+        const googleBtnText = document.getElementById('google-btn-text');
+        if (googleBtn) {
+          googleBtn.onclick = () => { showToast('warning', '下載的單機網頁不支援 Google 登入，請使用信箱登入或直接點選單機模式！'); };
+          googleBtn.style.opacity = '0.5';
+          googleBtn.style.cursor = 'not-allowed';
+          if(googleBtnText) googleBtnText.innerText = '⚠️ 單機版不支援 Google 登入';
+        }
+      }
+
+      // 🌟 動態載入 Firebase，並捕捉錯誤 (防止白畫面)
+      try {
+        const fbApp = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js");
+        const fbAuth = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js");
+        const fbDb = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js");
+        
+        // 提取方法
+        signInWithEmailAndPassword = fbAuth.signInWithEmailAndPassword;
+        createUserWithEmailAndPassword = fbAuth.createUserWithEmailAndPassword;
+        GoogleAuthProvider = fbAuth.GoogleAuthProvider;
+        signInWithPopup = fbAuth.signInWithPopup;
+        signInWithRedirect = fbAuth.signInWithRedirect;
+        getRedirectResult = fbAuth.getRedirectResult;
+        signOut = fbAuth.signOut;
+
+        doc = fbDb.doc;
+        setDoc = fbDb.setDoc;
+        deleteDoc = fbDb.deleteDoc;
+        collection = fbDb.collection;
+        onSnapshot = fbDb.onSnapshot;
+
+        app = fbApp.initializeApp(firebaseConfig);
+        auth = fbAuth.getAuth(app);
+        db = fbDb.getFirestore(app);
+        googleProvider = new GoogleAuthProvider();
+
+        // 處理手機版跳轉登入
+        getRedirectResult(auth).then((result) => {
+          if (result && result.user) showToast('success', 'Google 登入成功！');
+        }).catch((err) => {
+          if (err.code !== 'auth/redirect-cancelled-by-user') console.warn("跳轉登入失敗:", err);
+        });
+
+        fbAuth.onAuthStateChanged(auth, async (user) => {
+          document.getElementById('loading-screen').style.display = 'none';
           if (user) {
             userId = user.uid;
+            isOfflineMode = false;
             document.getElementById('auth-screen').style.display = 'none';
             document.getElementById('user-email').innerText = user.email || 'Google 使用者';
+            document.getElementById('logout-btn').innerText = '登出';
             setupFirestoreListeners();
           } else {
             userId = null;
@@ -626,17 +712,33 @@
             showAuthScreen();
           }
         });
-      } else {
+
+      } catch (e) {
+        console.warn("Firebase 網路模組初始化失敗，將強制進入單機模式", e);
+        isOfflineMode = true;
+        document.getElementById('loading-screen').style.display = 'none';
         initLocalFallback();
       }
     });
 
     function showAuthScreen() {
+      document.getElementById('loading-screen').style.display = 'none';
       document.getElementById('main-app').style.display = 'none';
       document.getElementById('welcome-screen').style.display = 'none';
       document.getElementById('dashboard-banner-area').style.display = 'none';
       document.getElementById('header-actions-area').style.display = 'none';
       document.getElementById('auth-screen').style.display = 'block';
+    }
+
+    function startLocalMode() {
+      isOfflineMode = true;
+      userId = null;
+      document.getElementById('auth-screen').style.display = 'none';
+      document.getElementById('user-email').innerText = '💻 單機模式';
+      document.getElementById('logout-btn').innerText = '登出返回';
+      
+      initLocalFallback();
+      showToast('success', '已進入單機模式，所有資料將安全保存在本設備中！');
     }
 
     async function loginWithEmail() {
@@ -654,10 +756,25 @@
     }
 
     async function loginWithGoogle() {
-      try { await signInWithPopup(auth, googleProvider); showToast('success', 'Google 登入成功！'); } catch (err) { showToast('error', `Google 登入失敗：${err.message}`); }
+      if(isOfflineMode) return showToast('warning', '單機模式無法使用 Google 登入');
+      try {
+        const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+        if (isMobile) {
+          showToast('info', '正在準備 Google 登入...');
+          await signInWithRedirect(auth, googleProvider);
+        } else {
+          await signInWithPopup(auth, googleProvider);
+          showToast('success', 'Google 登入成功！');
+        }
+      } catch (err) { showToast('error', `Google 登入失敗：${err.message}`); }
     }
 
     async function logoutUser() {
+      if (isOfflineMode) {
+        isOfflineMode = false;
+        showAuthScreen();
+        return;
+      }
       if (confirm('確定要登出系統嗎？')) {
         try { await signOut(auth); appState = { scenes: [], currentScene: "", data: {} }; }
         catch (err) { showToast('error', '登出失敗'); }
@@ -710,17 +827,20 @@
       const targetScene = sceneName || appState.currentScene;
       if (!targetScene) return;
 
-      if (!isOfflineMode && userId && db) {
+      localStorage.setItem('local_inventory_backup', JSON.stringify(appState));
+
+      if (!isOfflineMode && userId && db && navigator.onLine) {
         try {
           const docRef = doc(db, 'users', userId, 'inventory_scenes', encodeURIComponent(targetScene));
           await setDoc(docRef, { name: targetScene, content: appState.data[targetScene], updatedAt: Date.now() });
-        } catch(e) {}
-      } else {
-        localStorage.setItem('local_inventory_backup', JSON.stringify(appState));
+        } catch(e) {
+          console.warn("雲端儲存失敗，已保留單機紀錄", e);
+        }
       }
     }
 
     function initLocalFallback() {
+      document.getElementById('loading-screen').style.display = 'none';
       document.getElementById('auth-screen').style.display = 'none';
       document.getElementById('connection-status').className = "sync-status offline";
       try { const localData = localStorage.getItem('local_inventory_backup'); if (localData) appState = JSON.parse(localData); } catch(e){}
@@ -796,6 +916,7 @@
 
     function getSceneData() { return appState.data[appState.currentScene]; }
     function findItemById(id) { return getSceneData().items.find(i => i.id === id) || null; }
+    
     function setupGlobalScannerHook() {
       document.addEventListener('keydown', (e) => {
         if (currentTab !== 'scanner' || document.querySelector('.modal-overlay.active')) return;
@@ -804,9 +925,11 @@
         if (scannerInput && document.activeElement !== scannerInput) scannerInput.focus();
       });
     }
+    
     function handleScannerKeyPress(e) {
       if (e.key === 'Enter') { e.preventDefault(); const val = e.target.value.trim(); if (val) { processScannedBarcode(val); e.target.value = ''; } }
     }
+    
     function openUseModal(id) {
       const item = findItemById(id); if (!item) return;
       currentUseItem = item;
@@ -827,6 +950,7 @@
       }
       return null;
     }
+    
     function setScanMode(mode) {
       currentScanMode = mode;
       const inBtn = document.getElementById('scan-mode-in-btn'); const outBtn = document.getElementById('scan-mode-out-btn'); const scanInput = document.getElementById('scanner-input');
@@ -837,6 +961,7 @@
       }
       if (scanInput) scanInput.focus();
     }
+    
     function updateScanFeedbackHTML(status, barcode, item, customMsg) {
       const feedback = document.getElementById('scan-feedback'); if (!feedback) return;
       const isOut = currentScanMode === 'out';
@@ -863,6 +988,7 @@
         </div>` : `<p style="font-size:0.8rem; font-weight:700; color:var(--text-main); text-align:center; padding:0.5rem 0">${customMsg}</p>`}
       `;
     }
+    
     async function processScannedBarcode(barcode) {
       const lookup = findItemAndBarcodeMapping(barcode); const data = getSceneData();
       if (currentScanMode === 'in') {
@@ -906,7 +1032,6 @@
     }
     function removeTempBarcode(index) { tempEditBarcodes.splice(index, 1); renderTempBarcodes(); }
 
-    // 🌟 更新圖片預覽邏輯
     function triggerFileInput() {
       document.getElementById('edit-image-file').click();
     }
@@ -918,7 +1043,6 @@
       reader.onload = e => {
         const img = new Image();
         img.onload = () => {
-          // 強制將圖片縮小至 150px 以內 (極高壓縮，以符合資料庫容量限制)
           const canvas = document.createElement('canvas');
           const MAX_WIDTH = 150; 
           let scale = 1;
@@ -929,7 +1053,6 @@
           const ctx = canvas.getContext('2d');
           ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
 
-          // 輸出為極小容量的 base64 JPEG
           selectedImageBase64 = canvas.toDataURL('image/jpeg', 0.6);
 
           const preview = document.getElementById('local-image-preview');
@@ -951,11 +1074,10 @@
       document.getElementById('edit-min-stock').value = 2;
       document.getElementById('edit-expiry-date').value = ''; 
       
-      // 清空圖片與副條碼
       selectedImageBase64 = '';
       document.getElementById('local-image-preview').style.display = 'none';
       document.getElementById('upload-placeholder-box').style.display = 'flex';
-      document.getElementById('edit-image-file').value = ''; // 清除檔案選擇紀錄
+      document.getElementById('edit-image-file').value = ''; 
 
       tempEditBarcodes = []; renderTempBarcodes(); fillEditSelects(); openModal('modal-edit');
     }
@@ -970,9 +1092,8 @@
       document.getElementById('edit-min-stock').value = item.minStock;
       document.getElementById('edit-expiry-date').value = item.expiryDate || '';
 
-      // 載入商品照片
       selectedImageBase64 = item.image || '';
-      document.getElementById('edit-image-file').value = ''; // 清除檔案選擇紀錄
+      document.getElementById('edit-image-file').value = ''; 
       if (selectedImageBase64) {
         document.getElementById('local-image-preview').src = selectedImageBase64;
         document.getElementById('local-image-preview').style.display = 'block';
@@ -1007,7 +1128,7 @@
           if (itemIndex > -1) {
             data.items[itemIndex] = {
               id: itemId, barcode, name, category, location, stock, minStock, expiryDate, 
-              image: selectedImageBase64, // 存入壓縮後的照片
+              image: selectedImageBase64, 
               barcodes: [...tempEditBarcodes] 
             };
           }
@@ -1016,7 +1137,7 @@
           if (data.items.some(i => i.barcode === barcode)) return showToast('error', '條碼已存在！');
           const newItem = {
             id: `item_${Date.now()}`, barcode, name, category, location, stock, minStock, expiryDate, 
-            image: selectedImageBase64, // 存入壓縮後的照片
+            image: selectedImageBase64, 
             barcodes: [...tempEditBarcodes] 
           };
           data.items.push(newItem);
@@ -1029,6 +1150,7 @@
     }
 
     function filterExpiringItems() { const filterSelect = document.getElementById('filter-status'); if (filterSelect) { filterSelect.value = 'Expiring'; handleFilter(); showToast('info', '已為您篩選出「即期/過期」的商品'); } }
+    
     function renderBadges() {
       const data = getSceneData(); if (!data) return;
       const lowStockItems = data.items.filter(item => Number(item.stock) <= Number(item.minStock));
@@ -1040,7 +1162,6 @@
       const dashExpiring = document.getElementById('dash-expiring'); if (dashExpiring) { dashExpiring.innerText = `${expiringCount} 件`; dashExpiring.className = expiringCount > 0 ? "badge-expiring" : "badge-expiring safe"; }
     }
 
-    // 🌟 在卡片中渲染照片
     function renderInventoryGrid() {
       const container = document.getElementById('inventory-grid-container'); if (!container) return;
       const data = getSceneData();
@@ -1077,7 +1198,6 @@
         else if (expStatus === 'expiring') { expBadge = `<div class="expired-badge" style="background-color:var(--amber);">⏳ 即期</div>`; dateHtml = `<span style="color:var(--amber); font-weight:800;">即將到期: ${item.expiryDate}</span>`; }
         else if (item.expiryDate) { dateHtml = `<span style="color:var(--text-muted);">📅 期限: ${item.expiryDate}</span>`; }
 
-        // 照片或佔位符 HTML
         const imageContent = item.image 
           ? `<img src="${item.image}" style="width:100%; height:140px; object-fit:cover; border-bottom:1px solid var(--border-color);">`
           : `<div style="width:100%; height:140px; background:#f1f5f9; display:flex; align-items:center; justify-content:center; font-size:3.5rem; border-bottom:1px solid var(--border-color);">📦</div>`;
@@ -1111,12 +1231,12 @@
       }).join('');
     }
 
-    // --- Utility 函式綁定 ---
     function fillEditSelects() {
       const data = getSceneData();
       document.getElementById('edit-category').innerHTML = '<option value="">(無自訂分類)</option>' + data.categories.map(c => `<option value="${c}">${c}</option>`).join('');
       document.getElementById('edit-location').innerHTML = '<option value="">(無自訂位置)</option>' + data.locations.map(l => `<option value="${l}">${l}</option>`).join('');
     }
+    
     function renderDropdowns() {
       const data = getSceneData(); if (!data) return;
       const catHTML = '<option value="All">📂 所有分類</option>' + data.categories.map(c => `<option value="${c}">${c}</option>`).join('');
@@ -1125,12 +1245,14 @@
       if (filterCat) { const prev = filterCat.value; filterCat.innerHTML = catHTML; filterCat.value = prev || 'All'; }
       if (filterLoc) { const prev = filterLoc.value; filterLoc.innerHTML = locHTML; filterLoc.value = prev || 'All'; }
     }
+    
     function renderSettingsLists() {
       const data = getSceneData();
       const catList = document.getElementById('category-list-container'); const locList = document.getElementById('location-list-container');
       if (catList) catList.innerHTML = data.categories.map(c => `<div class="list-item"><span>${c}</span><button onclick="window.deleteCategory('${c}')" class="btn btn-rose" style="padding:0.2rem">✕</button></div>`).join('');
       if (locList) locList.innerHTML = data.locations.map(l => `<div class="list-item"><span>${l}</span><button onclick="window.deleteLocation('${l}')" class="btn btn-rose" style="padding:0.2rem">✕</button></div>`).join('');
     }
+    
     function renderSceneListTab() {
       const container = document.getElementById('scene-list-container'); if (!container) return;
       container.innerHTML = appState.scenes.map(s => `
@@ -1140,6 +1262,7 @@
         </div>
       `).join('');
     }
+    
     function renderAll() { renderBadges(); renderDropdowns(); renderInventoryGrid(); renderSettingsLists(); renderSceneListTab(); renderHistoryLogs(); }
 
     function openExportModal() { document.getElementById('export-current-name').innerText = appState.currentScene; openModal('modal-export-options'); }
@@ -1154,26 +1277,86 @@
       const link = document.createElement("a"); link.href = URL.createObjectURL(blob); link.download = `庫存備份_${appState.currentScene}_${new Date().toISOString().slice(0,10)}.json`; link.click();
       closeModal('modal-export-options'); showToast('success', `單一場景「${appState.currentScene}」資料已匯出！`);
     }
+
+    // 🌟 新增的進階 JSON 匯入邏輯
     function importJSONBackup(event) {
       const file = event.target.files[0]; if (!file) return;
       const reader = new FileReader();
       reader.onload = async (e) => {
         try {
-          const parsed = JSON.parse(e.target.result); let importedCount = 0; let scenesToImport = [];
-          if (parsed.scenes && Array.isArray(parsed.scenes)) { parsed.scenes.forEach(s => { if (parsed.data && parsed.data[s]) scenesToImport.push({ name: s, data: parsed.data[s] }); }); }
-          else if (parsed.name && parsed.content) { scenesToImport.push({ name: parsed.name, data: parsed.content }); }
+          const parsed = JSON.parse(e.target.result); 
+          let scenesToImport = [];
+          if (parsed.scenes && Array.isArray(parsed.scenes)) { 
+            parsed.scenes.forEach(s => { if (parsed.data && parsed.data[s]) scenesToImport.push({ name: s, data: parsed.data[s] }); }); 
+          }
+          else if (parsed.name && parsed.content) { 
+            scenesToImport.push({ name: parsed.name, data: parsed.content }); 
+          }
           else return showToast('error', '未知的 JSON 備份檔格式！');
 
-          for (const sceneObj of scenesToImport) {
-            let newName = sceneObj.name; if (appState.scenes.includes(newName)) newName = `${newName} (匯入_${Math.floor(Math.random()*100)})`;
-            appState.scenes.push(newName); appState.data[newName] = sceneObj.data; await saveSceneData(newName); importedCount++;
+          const hasConflict = scenesToImport.some(s => appState.scenes.includes(s.name));
+          if (hasConflict) {
+            pendingImportData = scenesToImport;
+            openModal('modal-import-conflict');
+          } else {
+            pendingImportData = scenesToImport;
+            processImport('normal');
           }
-          if (importedCount > 0) { loadSceneData(appState.scenes[appState.scenes.length - 1]); showToast('success', `✅ 成功合併匯入 ${importedCount} 個場景`); }
         } catch (err) { showToast('error', '解析備份 JSON 失敗！'); }
         event.target.value = '';
       };
       reader.readAsText(file);
     }
+
+    // 🌟 處理選項 (智慧合併 / 完全覆蓋 / 另存新檔)
+    async function processImport(strategy) {
+      if (!pendingImportData) return;
+      let importedCount = 0;
+      closeModal('modal-import-conflict');
+
+      for (const sceneObj of pendingImportData) {
+        let targetName = sceneObj.name;
+        const isConflict = appState.scenes.includes(targetName);
+
+        if (isConflict) {
+          if (strategy === 'rename') {
+            targetName = `${targetName} (匯入_${Math.floor(Math.random()*100)})`;
+            appState.scenes.push(targetName);
+            appState.data[targetName] = sceneObj.data;
+          } else if (strategy === 'overwrite') {
+            appState.data[targetName] = sceneObj.data;
+          } else if (strategy === 'merge') {
+            const existingData = appState.data[targetName];
+            const incomingData = sceneObj.data;
+
+            incomingData.categories.forEach(c => { if (!existingData.categories.includes(c)) existingData.categories.push(c); });
+            incomingData.locations.forEach(l => { if (!existingData.locations.includes(l)) existingData.locations.push(l); });
+
+            incomingData.items.forEach(incomingItem => {
+              const existingItemIndex = existingData.items.findIndex(i => i.barcode === incomingItem.barcode);
+              if (existingItemIndex >= 0) existingData.items[existingItemIndex] = incomingItem;
+              else existingData.items.push(incomingItem);
+            });
+
+            const combinedLogs = [...existingData.historyLogs, ...incomingData.historyLogs];
+            const uniqueLogs = Array.from(new Map(combinedLogs.map(item => [item.id, item])).values());
+            uniqueLogs.sort((a, b) => new Date(b.time) - new Date(a.time));
+            existingData.historyLogs = uniqueLogs;
+          }
+        } else {
+          appState.scenes.push(targetName);
+          appState.data[targetName] = sceneObj.data;
+        }
+        await saveSceneData(targetName);
+        importedCount++;
+      }
+      pendingImportData = null;
+      if (importedCount > 0) { 
+        loadSceneData(appState.currentScene || appState.scenes[appState.scenes.length - 1]); 
+        showToast('success', `✅ 成功處理匯入 ${importedCount} 個場景資料！`); 
+      }
+    }
+
     function exportExcelCSV() {
       const data = getSceneData(); if (data.items.length === 0) return showToast('warning', '無資料可匯出！');
       let csvContent = "\uFEFF商品名稱,主要條碼,存放位置,分類,目前數量,到期日,安全存量\n";
@@ -1186,25 +1369,30 @@
     function getFormattedTime() {
       const now = new Date(); return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`;
     }
+    
     function showToast(type, message) {
       const toast = document.getElementById('toast'); const text = document.getElementById('toast-text'); if (!toast || !text) return;
       toast.className = `toast-box active toast-${type}`; text.innerText = message; setTimeout(() => toast.classList.remove('active'), 3000);
     }
     function closeModal(id) { document.getElementById(id)?.classList.remove('active'); }
     function openModal(id) { document.getElementById(id)?.classList.add('active'); }
+    
     function switchTab(tabId) {
       currentTab = tabId;
       document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
       document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
       document.getElementById(`tab-${tabId}`)?.classList.add('active'); document.getElementById(`nav-${tabId}`)?.classList.add('active');
     }
+    
     function handleSearch() { renderInventoryGrid(); }
     function handleFilter() { renderInventoryGrid(); }
     function handleSort() { renderInventoryGrid(); }
+    
     function changeUseQty(val) {
       const input = document.getElementById('use-qty-input'); if (!input || !currentUseItem) return;
       let v = (parseInt(input.value) || 1) + val; if (v < 1) v = 1; if (v > currentUseItem.stock) v = currentUseItem.stock; input.value = v;
     }
+    
     async function confirmUse() {
       const input = document.getElementById('use-qty-input'); const qty = parseInt(input.value) || 1; const data = getSceneData();
       if (currentUseItem.stock < qty) return showToast('error', '領用失敗：數量不足！');
@@ -1212,6 +1400,7 @@
       data.historyLogs.unshift({ id: `h_${Date.now()}`, time: getFormattedTime(), itemName: currentUseItem.name, type: 'out', quantity: qty, note: '快速領用' });
       closeModal('modal-use'); renderAll(); await saveSceneData(); showToast('info', `已領用「${currentUseItem.name}」共 ${qty} 份`);
     }
+    
     function triggerDelete(id) {
       const item = findItemById(id); if (!item) return; deleteIdTemp = id;
       document.getElementById('confirm-title').innerText = `確定刪除「${item.name}」？`;
@@ -1220,15 +1409,18 @@
         closeModal('modal-confirm'); renderAll(); await saveSceneData(); showToast('error', '已移除。');
       }; openModal('modal-confirm');
     }
+    
     async function addCategory() { const input = document.getElementById('new-cat-input'); const val = input ? input.value.trim() : ''; if (!val) return; const data = getSceneData(); if (data.categories.includes(val)) return showToast('warning', '分類已存在！'); data.categories.push(val); input.value = ''; renderAll(); await saveSceneData(); showToast('success', '建立成功'); }
     async function deleteCategory(cat) { const data = getSceneData(); data.categories = data.categories.filter(c => c !== cat); renderAll(); await saveSceneData(); }
     async function addLocation() { const input = document.getElementById('new-loc-input'); const val = input ? input.value.trim() : ''; if (!val) return; const data = getSceneData(); if (data.locations.includes(val)) return showToast('warning', '位置已存在！'); data.locations.push(val); input.value = ''; renderAll(); await saveSceneData(); showToast('success', '建立成功'); }
     async function deleteLocation(loc) { const data = getSceneData(); data.locations = data.locations.filter(l => l !== loc); renderAll(); await saveSceneData(); }
+    
     function clearHistoryLog() {
       document.getElementById('confirm-title').innerText = '確定要清空日誌嗎？';
       document.getElementById('confirm-yes-btn').onclick = async () => { getSceneData().historyLogs = []; closeModal('modal-confirm'); renderAll(); await saveSceneData(); showToast('info', '日誌已清空。'); };
       openModal('modal-confirm');
     }
+    
     function renderHistoryLogs() {
       const tbody = document.getElementById('history-table-body'); const data = getSceneData(); if (!tbody || !data) return;
       if (data.historyLogs.length === 0) { tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:var(--text-muted)">無異動明細</td></tr>'; return; }
@@ -1237,18 +1429,22 @@
         return `<tr><td style="font-family:monospace; color:var(--text-muted)">${log.time}</td><td style="font-weight:700">${log.itemName}</td><td style="text-align:center"><span class="badge ${isIN ? 'badge-in' : 'badge-out'}">${isIN ? '補貨入庫' : '領用扣減'}</span></td><td style="text-align:center; font-weight:800; color: ${isIN ? 'var(--emerald)' : 'var(--rose)'}">${isIN ? '+' : '-'}${log.quantity}</td><td>${log.note || ''}</td></tr>`;
       }).join('');
     }
+    
     async function quickReplenish(id) {
       const data = getSceneData(); const item = findItemById(id); if (!item) return;
       item.stock += 1; data.historyLogs.unshift({ id: `h_${Date.now()}`, time: getFormattedTime(), itemName: item.name, type: 'in', quantity: 1, note: '快捷加 1 補貨' });
       renderAll(); await saveSceneData(); showToast('success', `「${item.name}」已快速補貨 +1 份`);
     }
+    
     function openBarcodeWizard(barcode) {
       const barcodeEl = document.getElementById('wizard-scanned-barcode'); if (barcodeEl) barcodeEl.innerText = barcode;
       const select = document.getElementById('wizard-link-item-select'); const data = getSceneData();
       if (select) { select.innerHTML = data.items.length === 0 ? '<option value="">(無現有備品可供關聯，請先新增商品)</option>' : data.items.map(item => `<option value="${item.id}">${item.name} (主要條碼: ${item.barcode})</option>`).join(''); }
       document.getElementById('wizard-link-pkg-name').value = '整箱裝'; document.getElementById('wizard-link-qty').value = '24'; openModal('modal-new-barcode-wizard');
     }
+    
     function triggerWizardCreateNew() { closeModal('modal-new-barcode-wizard'); openAddModal(scannedNewBarcodeTemp); }
+    
     async function triggerWizardLinkExisting() {
       const itemId = document.getElementById('wizard-link-item-select')?.value; const pkgName = document.getElementById('wizard-link-pkg-name')?.value.trim(); const qty = parseInt(document.getElementById('wizard-link-qty')?.value) || 24;
       if (!itemId) return showToast('warning', '沒有可選擇連結的現有備品！'); if (!pkgName) return showToast('warning', '請輸入包裝換算說明名稱！');
@@ -1264,11 +1460,14 @@
 
     Object.assign(window, {
       handleSceneSwitch, createNewScene, deleteScene, handleInitFirstScene, saveItem, confirmUse, quickReplenish, triggerDelete, 
-      openExportModal, exportFullBackup, exportCurrentScene, importJSONBackup, exportExcelCSV, addCategory, addLocation, deleteCategory, deleteLocation, 
+      openExportModal, exportFullBackup, exportCurrentScene, importJSONBackup, processImport, exportExcelCSV, addCategory, addLocation, deleteCategory, deleteLocation, 
       clearHistoryLog, switchTab, setScanMode, openUseModal, openAddModal, openEditModal, closeModal, openModal, changeUseQty, 
       handleSearch, handleFilter, handleSort, handleScannerKeyPress, filterExpiringItems, openBarcodeWizard, triggerWizardCreateNew, triggerWizardLinkExisting, 
-      loginWithEmail, registerWithEmail, loginWithGoogle, logoutUser, addTempBarcode, removeTempBarcode, triggerFileInput, previewLocalImage
+      loginWithEmail, registerWithEmail, loginWithGoogle, logoutUser, addTempBarcode, removeTempBarcode, triggerFileInput, previewLocalImage,
+      startLocalMode
     });
   </script>
 </body>
 </html>
+
+```
