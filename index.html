@@ -1,4 +1,3 @@
-```html
 <!DOCTYPE html>
 <html lang="zh-Hant-TW">
 <head>
@@ -239,13 +238,10 @@
     </div>
 
     <div class="auth-container">
-      <div class="logo-icon" style="width: 56px; height: 56px; margin: 0 auto 1rem auto;">
+      <div class="logo-icon" style="width: 56px; height: 56px; margin: 0 auto 1.5rem auto;">
         <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path></svg>
       </div>
-      <h2 class="auth-title">登入庫存系統</h2>
-      <p style="font-size: 0.75rem; color: var(--rose); margin-bottom: 1rem; line-height: 1.4;">
-        ⚠️ 若您使用 LINE 開啟本網頁，<br>請點選右上角「以預設瀏覽器開啟」
-      </p>
+      <h2 class="auth-title" style="margin-bottom: 1.5rem;">登入庫存系統</h2>
       
       <div class="form-group" style="text-align: left;">
         <label class="form-label">電子信箱</label>
@@ -690,13 +686,6 @@
         db = fbDb.getFirestore(app);
         googleProvider = new GoogleAuthProvider();
 
-        // 處理手機版跳轉登入
-        getRedirectResult(auth).then((result) => {
-          if (result && result.user) showToast('success', 'Google 登入成功！');
-        }).catch((err) => {
-          if (err.code !== 'auth/redirect-cancelled-by-user') console.warn("跳轉登入失敗:", err);
-        });
-
         fbAuth.onAuthStateChanged(auth, async (user) => {
           document.getElementById('loading-screen').style.display = 'none';
           if (user) {
@@ -755,18 +744,22 @@
       try { await createUserWithEmailAndPassword(auth, email, pass); showToast('success', '註冊成功！'); } catch (err) { showToast('error', `註冊失敗：${err.message}`); }
     }
 
+    // 🌟 已修正為強制優先使用 Popup 登入，避免 iOS Safari 跳轉登入造成無窮迴圈
     async function loginWithGoogle() {
       if(isOfflineMode) return showToast('warning', '單機模式無法使用 Google 登入');
       try {
-        const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-        if (isMobile) {
-          showToast('info', '正在準備 Google 登入...');
+        await signInWithPopup(auth, googleProvider);
+        showToast('success', 'Google 登入成功！');
+      } catch (err) {
+        console.error(err);
+        // 如果 Popup 被阻擋才嘗試用跳轉
+        if (err.code === 'auth/popup-blocked') {
+          showToast('warning', '彈出視窗被阻擋，正嘗試轉址登入...');
           await signInWithRedirect(auth, googleProvider);
-        } else {
-          await signInWithPopup(auth, googleProvider);
-          showToast('success', 'Google 登入成功！');
+        } else if (err.code !== 'auth/cancelled-popup-request' && err.code !== 'auth/popup-closed-by-user') {
+          showToast('error', `Google 登入失敗：${err.message}`);
         }
-      } catch (err) { showToast('error', `Google 登入失敗：${err.message}`); }
+      }
     }
 
     async function logoutUser() {
@@ -1469,5 +1462,6 @@
   </script>
 </body>
 </html>
+
 
 ```
