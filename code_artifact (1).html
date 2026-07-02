@@ -1,0 +1,1435 @@
+<!DOCTYPE html>
+<html lang="zh-Hant-TW">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>備品庫存系統</title>
+  <style>
+    :root {
+      --primary: #4f46e5;
+      --primary-hover: #4338ca;
+      --bg-main: #f8fafc;
+      --bg-card: #ffffff;
+      --text-main: #0f172a;
+      --text-muted: #64748b;
+      --border-color: #e2e8f0;
+      --emerald: #10b981;
+      --rose: #f43f5e;
+      --amber: #f59e0b;
+      --slate-dark: #0f172a;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    }
+
+    body { background-color: var(--bg-main); color: var(--text-main); min-height: 100vh; display: flex; flex-direction: column; }
+
+    header {
+      background-color: var(--slate-dark); color: white; padding: 1rem 1.5rem;
+      position: sticky; top: 0; z-index: 40; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    }
+    .header-container { max-width: 1200px; margin: 0 auto; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; }
+    .logo-area { display: flex; align-items: center; gap: 0.75rem; }
+    .logo-icon { background-color: var(--primary); padding: 0.6rem; border-radius: 12px; display: flex; align-items: center; justify-content: center; color: white; }
+    .logo-title h1 { font-size: 1.25rem; font-weight: 800; letter-spacing: -0.025em; }
+    .header-actions { display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; }
+    
+    .sync-status { padding: 0.4rem 0.8rem; border-radius: 8px; font-size: 0.8rem; font-weight: 700; display: flex; align-items: center; gap: 0.4rem; background-color: #1e293b; transition: all 0.3s; }
+    .sync-status.offline { color: #94a3b8; border: 1px solid #334155; }
+    .sync-status.online { color: #10b981; border: 1px solid #064e3b; }
+
+    /* 常駐型超扁平狀態列 */
+    .flat-status-bar {
+      background-color: #1e293b; color: #94a3b8; border-bottom: 1px solid #334155;
+      padding: 0.45rem 1.5rem; font-size: 0.78rem; font-weight: 700; z-index: 30; box-shadow: inset 0 -1px 0 rgba(255,255,0,0.05);
+    }
+    .status-bar-container { max-width: 1200px; margin: 0 auto; display: flex; align-items: center; justify-content: flex-start; flex-wrap: wrap; gap: 1.25rem; }
+    .status-item { display: flex; align-items: center; gap: 0.35rem; }
+    .status-item strong { color: #f1f5f9; }
+    .status-divider { color: #334155; user-select: none; }
+
+    .badge-low-stock { color: white !important; background-color: var(--rose); padding: 0.1rem 0.35rem; border-radius: 4px; font-size: 0.7rem; }
+    .badge-low-stock.safe { background-color: #334155; color: #94a3b8 !important; }
+    .badge-expiring { color: white !important; background-color: var(--amber); padding: 0.1rem 0.35rem; border-radius: 4px; font-size: 0.7rem; cursor: pointer; }
+    .badge-expiring.safe { background-color: #334155; color: #94a3b8 !important; cursor: default; }
+
+    .scene-selector-wrapper { display: flex; align-items: center; gap: 0.5rem; background-color: #1e293b; padding: 0.25rem 0.5rem; border-radius: 10px; border: 1px solid #334155; }
+    .scene-select { background: none; border: none; color: white; font-size: 0.85rem; font-weight: 700; outline: none; cursor: pointer; padding-right: 0.5rem; }
+    .scene-select option { background-color: var(--slate-dark); color: white; }
+
+    .main-layout { max-width: 1200px; width: 100%; margin: 1.5rem auto; padding: 0 1rem; display: flex; flex-direction: column; gap: 1.5rem; flex: 1; }
+    @media (min-width: 768px) { .main-layout { flex-direction: row; } }
+
+    aside { width: 100%; background-color: var(--bg-card); border-radius: 16px; border: 1px solid var(--border-color); padding: 0.75rem; display: flex; flex-direction: row; justify-content: space-around; gap: 0.25rem; flex-shrink: 0; overflow-x: auto;}
+    @media (min-width: 768px) { aside { width: 240px; flex-direction: column; justify-content: flex-start; gap: 0.5rem; height: fit-content; } }
+
+    .nav-btn { flex: 1; padding: 0.75rem 1rem; border-radius: 12px; border: none; background: none; font-size: 0.85rem; font-weight: 700; color: var(--text-muted); cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 0.75rem; transition: all 0.2s; white-space: nowrap;}
+    @media (min-width: 768px) { .nav-btn { flex: none; justify-content: flex-start; } }
+    .nav-btn:hover { background-color: #f1f5f9; color: var(--text-main); }
+    .nav-btn.active { background-color: #e0e7ff; color: var(--primary); border: 1px solid #c7d2fe; }
+
+    .btn { padding: 0.5rem 1rem; border-radius: 10px; font-size: 0.85rem; font-weight: 700; border: none; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem; transition: all 0.2s; }
+    .icon-btn { padding: 0.4rem; width: 32px; height: 32px; font-size: 1.2rem; }
+    .btn-primary { background-color: var(--primary); color: white; }
+    .btn-primary:hover { background-color: var(--primary-hover); }
+    .btn-emerald { background-color: var(--emerald); color: white; }
+    .btn-emerald:hover { background-color: #059669; }
+    .btn-rose { background-color: var(--rose); color: white; }
+    .btn-rose:hover { background-color: #e11d48; }
+    .btn-amber { background-color: var(--amber); color: white; }
+    .btn-secondary { background-color: white; border: 1px solid var(--border-color); color: var(--text-main); }
+    .btn-secondary:hover { background-color: #f1f5f9; }
+
+    .content-panel { flex: 1; background-color: var(--bg-card); border-radius: 16px; border: 1px solid var(--border-color); padding: 1.5rem; box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05); display: flex; flex-direction: column; overflow: hidden;}
+    .tab-content { display: none; }
+    .tab-content.active { display: block; animation: fadeIn 0.3s; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+
+    .toolbar { display: flex; flex-direction: column; gap: 1rem; margin-bottom: 1.5rem; }
+    @media (min-width: 1024px) { .toolbar { flex-direction: row; align-items: center; justify-content: space-between; } }
+    .search-wrapper { position: relative; flex: 1; }
+    .search-input { width: 100%; padding: 0.65rem 1rem 0.65rem 2.5rem; border-radius: 12px; border: 1px solid var(--border-color); background-color: #f8fafc; font-size: 0.85rem; outline: none; }
+    .search-input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1); }
+    .search-icon-svg { position: absolute; left: 0.75rem; top: 50%; transform: translateY(-50%); color: var(--text-muted); pointer-events: none; }
+    .filter-actions { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+    .select-dropdown { padding: 0.65rem 1rem; border-radius: 12px; border: 1px solid var(--border-color); font-size: 0.85rem; font-weight: 600; background-color: #f8fafc; outline: none; cursor: pointer; }
+
+    .inventory-grid { display: grid; grid-template-columns: 1fr; gap: 1.5rem; }
+    @media (min-width: 640px) { .inventory-grid { grid-template-columns: repeat(2, 1fr); } }
+    @media (min-width: 1024px) { .inventory-grid { grid-template-columns: repeat(3, 1fr); } }
+
+    .item-card { background-color: white; border: 1px solid var(--border-color); border-radius: 16px; overflow: hidden; display: flex; flex-direction: column; position: relative; transition: all 0.3s; }
+    .item-card:hover { transform: translateY(-2px); box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05); border-color: #c7d2fe; }
+    .item-card.low-stock { border-color: #fde047; background-color: #fffbeb; }
+    .item-card.expired { border-color: var(--rose); background-color: #fff1f2; }
+    .low-stock-badge { position: absolute; top: 0.75rem; left: 0.75rem; background-color: var(--amber); color: white; font-size: 0.65rem; font-weight: 800; padding: 0.25rem 0.5rem; border-radius: 6px; z-index: 10; display: flex; align-items: center; gap: 0.25rem; }
+    .expired-badge { position: absolute; top: 0.75rem; right: 0.75rem; background-color: var(--rose); color: white; font-size: 0.65rem; font-weight: 800; padding: 0.25rem 0.5rem; border-radius: 6px; z-index: 10; display: flex; align-items: center; gap: 0.25rem; }
+    
+    .item-info { padding: 1rem; flex: 1; display: flex; flex-direction: column; justify-content: space-between; gap: 0.25rem; }
+    .item-tags { display: flex; justify-content: flex-start; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 0.5rem; }
+    .item-tag-cat { font-size: 0.65rem; font-weight: 700; background-color: #e0e7ff; color: var(--primary); padding: 0.15rem 0.4rem; border-radius: 4px; }
+    .item-tag-loc { font-size: 0.65rem; font-weight: 700; background-color: #f1f5f9; color: var(--text-muted); padding: 0.15rem 0.4rem; border-radius: 4px; display: flex; align-items: center; gap: 0.15rem; }
+    .item-title { font-size: 1rem; font-weight: 700; color: var(--text-main); cursor: pointer; line-height: 1.25; margin-bottom: 0.25rem; }
+    .item-title:hover { color: var(--primary); text-decoration: underline; }
+    .item-barcode { font-size: 0.7rem; color: #94a3b8; font-family: monospace; display: flex; align-items: center; gap: 0.25rem; }
+    .item-expiry { font-size: 0.75rem; display: flex; align-items: center; gap: 0.25rem; margin-top: 0.5rem; font-weight: 600; }
+    .item-card-bottom { display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #f1f5f9; padding-top: 0.75rem; margin-top: 0.5rem; }
+    .item-stock-val { font-size: 1.25rem; font-weight: 800; }
+    .item-card-actions { display: flex; gap: 0.4rem; }
+
+    /* Scanner */
+    .scanner-view { max-width: 550px; margin: 2rem auto; text-align: center; width: 100%; }
+    .scanner-circle-icon { background-color: #e0e7ff; color: var(--primary); width: 72px; height: 72px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; margin-bottom: 1rem; }
+    .mode-switch-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; background-color: #f1f5f9; padding: 0.4rem; border-radius: 16px; margin-top: 1.5rem; margin-bottom: 1.5rem; }
+    .mode-switch-btn { padding: 0.75rem; border-radius: 12px; border: none; font-size: 0.85rem; font-weight: 800; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 0.5rem; transition: all 0.2s; background: none; color: var(--text-muted); }
+    .mode-switch-btn.active-in { background-color: var(--primary); color: white; box-shadow: 0 4px 6px rgba(79, 70, 229, 0.2); }
+    .mode-switch-btn.active-out { background-color: var(--rose); color: white; box-shadow: 0 4px 6px rgba(244, 63, 94, 0.2); }
+    .barcode-input-container { position: relative; margin-bottom: 1.5rem; }
+    .large-barcode-input { width: 100%; text-align: center; font-family: monospace; font-size: 1.25rem; font-weight: 700; padding: 1rem; border-radius: 16px; border: 2px solid var(--border-color); outline: none; letter-spacing: 0.15em; }
+    .large-barcode-input:focus { border-color: var(--primary); box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.1); }
+    .large-barcode-input.mode-out:focus { border-color: var(--rose); box-shadow: 0 0 0 4px rgba(244, 63, 94, 0.1); }
+    .listen-badge { position: absolute; right: 1rem; top: 50%; transform: translateY(-50%); font-size: 0.65rem; font-weight: 800; color: var(--emerald); display: flex; align-items: center; gap: 0.25rem; }
+    .pulse-dot { width: 8px; height: 8px; border-radius: 50%; background-color: var(--emerald); animation: pulse 1.5s infinite; }
+    @keyframes pulse { 0% { transform: scale(0.9); opacity: 1; } 50% { transform: scale(1.2); opacity: 0.5; } 100% { transform: scale(0.9); opacity: 1; } }
+
+    /* Settings Utils */
+    .inline-form { display: flex; gap: 0.5rem; margin-bottom: 1rem; }
+    .inline-input { flex: 1; padding: 0.65rem 1rem; border-radius: 10px; border: 1px solid var(--border-color); outline: none; font-size: 0.85rem; }
+    .list-wrapper { display: flex; flex-direction: column; gap: 0.5rem; }
+    .list-item { display: flex; justify-content: space-between; align-items: center; padding: 0.75rem 1rem; background-color: white; border: 1px solid var(--border-color); border-radius: 10px; }
+    .settings-grid { display: grid; grid-template-columns: 1fr; gap: 1.5rem; margin-top: 1.5rem; }
+    @media (min-width: 768px) { .settings-grid { grid-template-columns: 1fr 1fr; } }
+    .settings-box { background-color: #f8fafc; padding: 1.25rem; border-radius: 16px; border: 1px solid var(--border-color); }
+    .settings-title { font-size: 1rem; font-weight: 800; margin-bottom: 1rem; }
+
+    /* Modals & Utils */
+    .modal-overlay { position: fixed; inset: 0; background-color: rgba(15, 23, 42, 0.6); backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; z-index: 100; opacity: 0; pointer-events: none; transition: opacity 0.2s; padding: 1rem; }
+    .modal-overlay.active { opacity: 1; pointer-events: auto; }
+    .modal-box { background-color: white; border-radius: 24px; width: 100%; max-width: 480px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); padding: 1.5rem; transform: scale(0.95); transition: transform 0.2s; max-height: 90vh; overflow-y: auto; }
+    .modal-overlay.active .modal-box { transform: scale(1); }
+    .modal-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 0.75rem; margin-bottom: 1.25rem; }
+    .modal-title { font-size: 1.1rem; font-weight: 800; }
+    .modal-close { background: none; border: none; cursor: pointer; color: var(--text-muted); }
+    .form-group { margin-bottom: 1rem; }
+    .form-label { display: block; font-size: 0.75rem; font-weight: 700; color: var(--text-muted); margin-bottom: 0.35rem; }
+    .form-input, .form-select { width: 100%; padding: 0.6rem 0.8rem; border-radius: 10px; border: 1px solid var(--border-color); outline: none; font-size: 0.85rem; background-color: #f8fafc; }
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+    
+    .toast-box {
+      position: fixed; top: 1.5rem; right: 1.5rem; background-color: white; border-left: 5px solid var(--primary);
+      box-shadow: 0 10px 25px rgba(0,0,0,0.1); padding: 0.8rem 1.2rem; border-radius: 8px; font-size: 0.85rem; font-weight: 700;
+      display: flex; align-items: center; gap: 0.5rem; z-index: 1000; transform: translateY(-20px); opacity: 0; transition: all 0.3s; pointer-events: none;
+    }
+    .toast-box.active { transform: translateY(0); opacity: 1; }
+    .toast-success { border-left-color: var(--emerald); }
+    .toast-warning { border-left-color: var(--amber); }
+    .toast-error { border-left-color: var(--rose); }
+
+    .history-table-wrapper { overflow-x: auto; border: 1px solid var(--border-color); border-radius: 12px; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.8rem; text-align: left; }
+    th { background-color: #f8fafc; color: var(--text-muted); padding: 0.75rem 1rem; font-weight: 700; border-bottom: 1px solid var(--border-color); white-space: nowrap; }
+    td { padding: 0.75rem 1rem; border-bottom: 1px solid #f1f5f9; }
+    .badge { display: inline-block; font-size: 0.65rem; font-weight: 800; padding: 0.2rem 0.4rem; border-radius: 4px; }
+    .badge-in { background-color: #e6f4ea; color: #137333; }
+    .badge-out { background-color: #fce8e6; color: #c5221f; }
+
+    footer { background-color: #0f172a; color: #64748b; text-align: center; padding: 1rem; font-size: 0.75rem; border-top: 1px solid #1e293b; margin-top: auto; }
+  </style>
+</head>
+<body>
+
+  <!-- 全域 Toast -->
+  <div id="toast" class="toast-box">
+    <span id="toast-text">通知訊息</span>
+  </div>
+
+  <!-- Header -->
+  <header>
+    <div class="header-container">
+      <div class="logo-area">
+        <div class="logo-icon">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
+        </div>
+        <div class="logo-title">
+          <h1 id="app-title-display">備品庫存系統</h1>
+        </div>
+      </div>
+
+      <div class="header-actions" id="header-actions-area" style="display: none;">
+        <div class="scene-selector-wrapper">
+          <span style="font-size: 0.75rem; color: #94a3b8; font-weight:700">🎬 場景：</span>
+          <select id="header-scene-select" onchange="window.handleSceneSwitch(this.value)" class="scene-select"></select>
+        </div>
+        <div id="connection-status" class="sync-status offline">
+          <span class="pulse-dot" style="background-color: currentColor"></span>
+          <span id="connection-text">連線準備中...</span>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- 常駐型狀態列 (Status Bar) 加入日期追蹤 -->
+  <div id="dashboard-banner-area" class="flat-status-bar" style="display: none;">
+    <div class="status-bar-container">
+      <div class="status-item">🎬 當前：<strong id="dash-scene-name">-</strong></div>
+      <span class="status-divider">|</span>
+      <div class="status-item">📦 品項：<strong id="dash-total-items">0 款</strong></div>
+      <span class="status-divider">|</span>
+      <div class="status-item">⚠️ 告急：<strong id="dash-low-stock" class="badge-low-stock safe">0 件</strong></div>
+      <span class="status-divider">|</span>
+      <div class="status-item" title="點擊篩選即期品" onclick="window.filterExpiringItems()" style="cursor: pointer;">
+        ⏳ 即期/過期：<strong id="dash-expiring" class="badge-expiring safe">0 件</strong>
+      </div>
+    </div>
+  </div>
+
+  <!-- 歡迎建立場景屏 -->
+  <div id="welcome-screen" style="display: none; max-width: 600px; margin: 4rem auto; text-align: center; padding: 2rem; background: white; border-radius: 16px; border: 1px solid var(--border-color);">
+    <div style="background: #e0e7ff; color: var(--primary); width: 64px; height: 64px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1.5rem;">
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
+    </div>
+    <h2 style="font-size: 1.4rem; font-weight: 800; margin-bottom: 0.5rem;">🎬 建立第一個場景</h2>
+    <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1.5rem; line-height: 1.5;">
+      系統已啟用雲端同步！請先輸入您的第一個儲藏場景名稱（例如：大倉庫、客廳櫃），我們將為您建立專屬的管理空間。
+    </p>
+    <div class="form-group" style="text-align: left;">
+      <label class="form-label" style="font-weight: 700;">場景名稱 / 地點名稱</label>
+      <input type="text" id="init-scene-name" placeholder="例：客廳儲物櫃" class="form-input" style="background: #f8fafc;">
+    </div>
+    <button type="button" onclick="window.handleInitFirstScene()" class="btn btn-primary" style="width: 100%; padding: 0.75rem; justify-content: center; margin-top: 0.5rem; font-weight: 800; border-radius: 12px;">
+      建立並開始使用
+    </button>
+  </div>
+
+  <!-- 主要操作介面 -->
+  <div id="main-app" class="main-layout" style="display: none;">
+    <!-- 左側選單 -->
+    <aside>
+      <button onclick="window.switchTab('inventory')" id="nav-inventory" class="nav-btn active">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path></svg>庫存總覽
+      </button>
+      <button onclick="window.switchTab('scanner')" id="nav-scanner" class="nav-btn">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="16" rx="2"></rect><line x1="7" y1="8" x2="7" y2="16"></line><line x1="12" y1="8" x2="12" y2="16"></line><line x1="17" y1="8" x2="17" y2="16"></line></svg>掃碼作業區
+      </button>
+      <button onclick="window.switchTab('settings')" id="nav-settings" class="nav-btn">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>設定與分類
+      </button>
+      <button onclick="window.switchTab('history')" id="nav-history" class="nav-btn">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>歷史日誌
+      </button>
+    </aside>
+
+    <!-- 右側面板 -->
+    <main class="content-panel">
+      <!-- TAB 1: 庫存總覽 -->
+      <div id="tab-inventory" class="tab-content active">
+        <div class="toolbar">
+          <div class="search-wrapper">
+            <svg class="search-icon-svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+            <input type="text" id="search-input" oninput="window.handleSearch()" placeholder="搜尋品名、存放位置、多重條碼..." class="search-input">
+          </div>
+
+          <div class="filter-actions">
+            <select id="filter-status" onchange="window.handleFilter()" class="select-dropdown">
+              <option value="All">🟢 所有狀態</option>
+              <option value="Expiring">⏳ 僅看即期與過期</option>
+            </select>
+            <select id="filter-category" onchange="window.handleFilter()" class="select-dropdown"></select>
+            <select id="filter-location" onchange="window.handleFilter()" class="select-dropdown"></select>
+            <select id="filter-sort" onchange="window.handleSort()" class="select-dropdown">
+              <option value="default">↕️ 預設排序</option>
+              <option value="stock-asc">📈 庫存：由少到多</option>
+              <option value="stock-desc">📉 庫存：由多到少</option>
+              <option value="expiry-asc">📅 日期：快到期優先</option>
+            </select>
+            <button onclick="window.openAddModal()" class="btn btn-primary">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>手動新增
+            </button>
+          </div>
+        </div>
+
+        <div id="inventory-grid-container" class="inventory-grid"></div>
+      </div>
+
+      <!-- TAB 2: 掃碼作業區 -->
+      <div id="tab-scanner" class="tab-content">
+        <div class="scanner-view">
+          <div class="scanner-circle-icon">
+            <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="16" rx="2"></rect><line x1="7" y1="8" x2="7" y2="16"></line><line x1="12" y1="8" x2="12" y2="16"></line><line x1="17" y1="8" x2="17" y2="16"></line></svg>
+          </div>
+          <h2 style="font-size: 1.25rem; font-weight:800">條碼掃描管理</h2>
+          <p style="font-size:0.8rem; color:var(--text-muted); margin-top:0.3rem">
+            💡 啟用【全域免對焦技術】。您<b>不需點選輸入框</b>，手持掃描槍直接「嗶」即可自動增減！
+          </p>
+          
+          <div class="mode-switch-grid">
+            <button id="scan-mode-in-btn" onclick="window.setScanMode('in')" class="mode-switch-btn active-in">📥 掃碼加庫存</button>
+            <button id="scan-mode-out-btn" onclick="window.setScanMode('out')" class="mode-switch-btn">📤 掃碼減庫存</button>
+          </div>
+
+          <div class="barcode-input-container">
+            <input type="text" id="scanner-input" onkeypress="window.handleScannerKeyPress(event)" placeholder="全域偵聽中...直接掃瞄條碼即可..." class="large-barcode-input">
+            <div class="listen-badge"><div class="pulse-dot"></div><span>免對焦掃碼中</span></div>
+          </div>
+
+          <div id="scan-feedback" class="scan-feedback">
+            <p style="text-align: center; color: var(--text-muted); font-size: 0.85rem">等待條碼讀取中...</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB 3: 設定與分類 -->
+      <div id="tab-settings" class="tab-content">
+        <div style="background-color: #f1f5f9; padding: 1.25rem; border-radius: 16px; margin-bottom: 1.5rem">
+          <h3 style="font-size: 1rem; font-weight: 800; margin-bottom: 0.5rem">🎬 儲藏場景庫管理</h3>
+          <div class="inline-form">
+            <input type="text" id="new-scene-input" placeholder="例：辦公室、地下倉庫、二樓廚櫃..." class="inline-input">
+            <button onclick="window.createNewScene()" class="btn btn-primary">新增場景</button>
+          </div>
+          <div id="scene-list-container" class="list-wrapper"></div>
+        </div>
+
+        <div class="settings-grid">
+          <div class="settings-box">
+            <div class="settings-title">📂 分類資料夾設定</div>
+            <div class="inline-form">
+              <input type="text" id="new-cat-input" placeholder="例：食品、文具..." class="inline-input">
+              <button onclick="window.addCategory()" class="btn btn-primary">新增</button>
+            </div>
+            <div id="category-list-container" class="list-wrapper"></div>
+          </div>
+
+          <div class="settings-box">
+            <div class="settings-title">📍 存放位置設定</div>
+            <div class="inline-form">
+              <input type="text" id="new-loc-input" placeholder="例：客廳儲藏室..." class="inline-input">
+              <button onclick="window.addLocation()" class="btn btn-primary">新增</button>
+            </div>
+            <div id="location-list-container" class="list-wrapper"></div>
+          </div>
+        </div>
+        
+        <div style="background-color: #f1f5f9; padding: 1.25rem; border-radius: 16px; margin-top: 1.5rem">
+          <h3 style="font-size: 1rem; font-weight: 800; margin-bottom: 0.4rem;">📊 備份與資料轉移</h3>
+          <p style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 1rem">
+            系統目前已開啟雲端自動同步功能。若需資料留存，可使用下方匯出功能。
+          </p>
+          <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+            <button onclick="window.openExportModal()" class="btn btn-primary" style="font-size: 0.75rem">📦 匯出 JSON 備份檔...</button>
+            <label class="btn btn-secondary" style="font-size: 0.75rem; cursor: pointer">
+              📥 匯入 JSON (不會覆蓋現有資料)
+              <input type="file" id="import-json-file" accept=".json" onchange="window.importJSONBackup(event)" style="display:none">
+            </label>
+            <button onclick="window.exportExcelCSV()" class="btn btn-emerald" style="font-size: 0.75rem">📊 匯出 Excel CSV 資料表</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB 4: 歷史紀錄 -->
+      <div id="tab-history" class="tab-content">
+        <div style="display:flex; justify-content: space-between; align-items:center; margin-bottom:1.5rem">
+          <h2 style="font-size:1.1rem; font-weight:800">變動日誌明細</h2>
+          <button onclick="window.clearHistoryLog()" class="btn btn-rose" style="padding:0.4rem 0.8rem; font-size:0.75rem">清空日誌</button>
+        </div>
+        <div class="history-table-wrapper">
+          <table>
+            <thead>
+              <tr><th>操作時間</th><th>商品名稱</th><th style="text-align: center">狀態</th><th style="text-align: center">變更數量</th><th>操作備註</th></tr>
+            </thead>
+            <tbody id="history-table-body"></tbody>
+          </table>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- MODAL: 新增/編輯視窗 -->
+  <div id="modal-edit" class="modal-overlay">
+    <div class="modal-box" style="max-width: 550px;">
+      <div class="modal-header">
+        <h3 id="modal-edit-head-title" class="modal-title">手動新增備品</h3>
+        <button type="button" onclick="window.closeModal('modal-edit')" class="modal-close"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
+      </div>
+
+      <div id="edit-form-wrap">
+        <input type="hidden" id="edit-item-id">
+        <div class="form-group">
+          <label class="form-label">主要條碼 (預設單包裝)</label>
+          <input type="text" id="edit-barcode" class="form-input" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">商品品名 *</label>
+          <input type="text" id="edit-name" placeholder="例：鮮乳、衛生紙..." class="form-input" required>
+        </div>
+        <div class="grid-2">
+          <div class="form-group">
+            <label class="form-label">有效期限 (選填，生鮮食品適用)</label>
+            <input type="date" id="edit-expiry-date" class="form-input">
+          </div>
+          <div class="form-group">
+            <label class="form-label">目前數量</label>
+            <input type="number" id="edit-stock" min="0" value="1" class="form-input">
+          </div>
+        </div>
+        <div class="grid-2">
+          <div class="form-group">
+            <label class="form-label">分類資料夾</label>
+            <select id="edit-category" class="form-select"></select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">存放位置</label>
+            <select id="edit-location" class="form-select"></select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">安全警告存量</label>
+          <input type="number" id="edit-min-stock" min="1" value="2" class="form-input">
+        </div>
+        
+        <!-- 簡化版圖片上傳 -->
+        <div class="form-group" style="display:none;">
+          <input type="file" id="edit-image-file" accept="image/*" onchange="window.previewLocalImage(event)" style="display:none">
+          <img id="local-image-preview" class="image-upload-preview">
+        </div>
+
+        <div style="display:flex; gap:0.5rem; margin-top:1.5rem">
+          <button type="button" onclick="window.closeModal('modal-edit')" class="btn btn-secondary" style="flex:1">取消</button>
+          <button type="button" onclick="window.saveItem()" class="btn btn-primary" style="flex:1">確認建檔/存檔</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: 快捷領用對話框 -->
+  <div id="modal-use" class="modal-overlay">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3 class="modal-title">快捷領用扣除</h3>
+        <button onclick="window.closeModal('modal-use')" class="modal-close"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
+      </div>
+      <div style="display:flex; gap: 1rem; align-items: center; background-color:#f8fafc; padding:1rem; border-radius:12px; margin-bottom:1rem">
+        <div>
+          <h4 id="modal-use-title" style="font-size:1.1rem; font-weight:700">商品</h4>
+          <p id="modal-use-loc" style="font-size:0.85rem; color:var(--text-muted); margin-top:0.4rem">位置</p>
+          <p style="font-size:0.9rem; font-weight:800; color:var(--primary); margin-top:0.4rem">目前在庫剩餘：<span id="modal-use-stock">0</span> 份</p>
+        </div>
+      </div>
+      <div style="text-align: center; margin-bottom: 1.5rem">
+        <p style="font-size:0.8rem; font-weight:700; color:var(--text-muted); margin-bottom:0.5rem">本次使用領用：</p>
+        <div style="display:inline-flex; align-items:center; gap:0.5rem">
+          <button type="button" onclick="window.changeUseQty(-1)" class="btn btn-secondary icon-btn">-</button>
+          <input type="number" id="use-qty-input" min="1" value="1" style="width:80px; text-align:center; font-size:1.25rem; font-weight:800; border:1px solid var(--border-color); padding:0.3rem; border-radius:8px">
+          <button type="button" onclick="window.changeUseQty(1)" class="btn btn-secondary icon-btn">+</button>
+        </div>
+      </div>
+      <div style="display:flex; gap:0.5rem">
+        <button type="button" onclick="window.closeModal('modal-use')" class="btn btn-secondary" style="flex:1">取消</button>
+        <button type="button" onclick="window.confirmUse()" class="btn btn-rose" style="flex:1">確認扣減</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: 刪除確認 -->
+  <div id="modal-confirm" class="modal-overlay">
+    <div class="modal-box" style="max-width:380px; text-align:center">
+      <h3 style="font-size:1.1rem; font-weight:800; margin-bottom:0.5rem" id="confirm-title">確定執行？</h3>
+      <p style="font-size:0.8rem; color:var(--text-muted); margin-bottom:1.5rem" id="confirm-text">此動作無法復原。</p>
+      <div style="display:flex; gap:0.5rem">
+        <button type="button" onclick="window.closeModal('modal-confirm')" class="btn btn-secondary" style="flex:1">取消</button>
+        <button type="button" id="confirm-yes-btn" class="btn btn-rose" style="flex:1">確定</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: 匯出選項對話框 -->
+  <div id="modal-export-options" class="modal-overlay">
+    <div class="modal-box" style="max-width: 400px; text-align: center;">
+      <h3 class="modal-title" style="margin-bottom: 1.5rem; border: none;">選擇備份 JSON 匯出範圍</h3>
+      <div style="display:flex; flex-direction:column; gap: 1rem;">
+        <button onclick="window.exportFullBackup()" class="btn btn-primary" style="justify-content:center; padding:1rem; font-size: 0.95rem;">📦 匯出「所有場景」 (推薦：完整備份)</button>
+        <button onclick="window.exportCurrentScene()" class="btn btn-emerald" style="justify-content:center; padding:1rem; font-size: 0.95rem;">📄 僅匯出當前場景 (<span id="export-current-name"></span>)</button>
+      </div>
+      <button onclick="window.closeModal('modal-export-options')" class="btn btn-secondary" style="width:100%; justify-content:center; margin-top:1.5rem">取消</button>
+    </div>
+  </div>
+
+  <!-- MODAL: 新條碼精靈 -->
+  <div id="modal-new-barcode-wizard" class="modal-overlay">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3 class="modal-title">發現未註冊條碼</h3>
+        <button onclick="window.closeModal('modal-new-barcode-wizard')" class="modal-close"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
+      </div>
+      <p style="font-size:0.9rem; margin-bottom:1rem">系統偵測到未知條碼：<br><strong id="wizard-scanned-barcode" style="color:var(--primary); font-size:1.25rem; font-family: monospace;"></strong></p>
+      <p style="font-size:0.85rem; color:var(--text-muted); margin-bottom:1.5rem">這是一個全新的商品，還是現有商品的不同包裝（例如整箱的條碼）？</p>
+
+      <div style="display:flex; flex-direction:column; gap:1rem;">
+        <button onclick="window.triggerWizardCreateNew()" class="btn btn-primary" style="justify-content:center; padding:1rem;">🆕 建立全新商品</button>
+        <div style="background:#f8fafc; padding:1.25rem; border-radius:12px; border:1px solid var(--border-color); text-align: left;">
+          <p style="font-size:0.9rem; font-weight:800; margin-bottom:0.75rem">🔗 連結至現有商品 (多重包裝換算)</p>
+          <select id="wizard-link-item-select" class="form-select" style="margin-bottom:0.75rem"></select>
+          <div class="grid-2">
+            <input type="text" id="wizard-link-pkg-name" placeholder="包裝名稱(例:整箱)" class="form-input">
+            <input type="number" id="wizard-link-qty" placeholder="內含數量(例:24)" min="1" class="form-input">
+          </div>
+          <button onclick="window.triggerWizardLinkExisting()" class="btn btn-secondary" style="width:100%; margin-top:0.75rem; justify-content:center;">確認連結</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- JavaScript 邏輯區 -->
+  <script type="module">
+    // === 雲端同步設定區 (給下載到本地的用戶) ===
+    const MY_OWN_FIREBASE_CONFIG = null; 
+
+    // --- Firebase SDKs ---
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+    import { getAuth, signInWithCustomToken, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+    import { getFirestore, doc, setDoc, deleteDoc, collection, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+    const appId = typeof __app_id !== 'undefined' ? __app_id : 'inventory-app';
+    const envFirebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : null;
+    const activeConfig = MY_OWN_FIREBASE_CONFIG || envFirebaseConfig;
+    
+    let app, auth, db;
+    let userId = null;
+    let unsubscribeFirestore = null;
+    let isOfflineMode = false;
+
+    if (activeConfig) {
+      try {
+        app = initializeApp(activeConfig);
+        auth = getAuth(app);
+        db = getFirestore(app);
+      } catch(e) { console.warn("Firebase 初始化失敗，將使用本地模式", e); isOfflineMode = true; }
+    } else {
+      isOfflineMode = true;
+    }
+
+    // --- 1. 狀態與常數 ---
+    let appState = { scenes: [], currentScene: "", data: {} };
+    let currentTab = 'inventory';
+    let currentScanMode = 'in';
+    let currentUseItem = null;
+    let selectedImageBase64 = '';
+    let deleteIdTemp = '';
+    let scannedNewBarcodeTemp = '';
+
+    // --- 2. 初始化與連線邏輯 ---
+    document.addEventListener('DOMContentLoaded', () => {
+      setupGlobalScannerHook();
+
+      if (!isOfflineMode && auth) {
+        const initAuth = async () => {
+          try {
+            if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+              await signInWithCustomToken(auth, __initial_auth_token);
+            } else {
+              await signInAnonymously(auth);
+            }
+          } catch (error) {
+            console.error("Auth error:", error);
+            isOfflineMode = true;
+            initLocalFallback();
+          }
+        };
+
+        onAuthStateChanged(auth, (user) => {
+          if (user) {
+            userId = user.uid;
+            setupFirestoreListeners();
+          } else {
+            userId = null;
+            if (unsubscribeFirestore) unsubscribeFirestore();
+          }
+        });
+        initAuth();
+      } else {
+        initLocalFallback();
+      }
+    });
+
+    function setupFirestoreListeners() {
+      if (!userId || !db) return;
+      const connBadge = document.getElementById('connection-status');
+      const connText = document.getElementById('connection-text');
+      const scenesRef = collection(db, 'artifacts', appId, 'users', userId, 'inventory_scenes');
+      
+      unsubscribeFirestore = onSnapshot(scenesRef, (snapshot) => {
+        let isLocalUpdate = snapshot.metadata.hasPendingWrites;
+        let loadedScenes = [];
+        let loadedData = {};
+        
+        snapshot.forEach(docSnap => {
+          const data = docSnap.data();
+          loadedScenes.push(data.name);
+          loadedData[data.name] = data.content;
+        });
+
+        if (loadedScenes.length > 0 || !isLocalUpdate) {
+            appState.scenes = loadedScenes;
+            appState.data = loadedData;
+        }
+
+        if (appState.scenes.length === 0) {
+          document.getElementById('main-app').style.display = 'none';
+          document.getElementById('dashboard-banner-area').style.display = 'none';
+          document.getElementById('welcome-screen').style.display = 'block';
+        } else {
+          document.getElementById('welcome-screen').style.display = 'none';
+          document.getElementById('main-app').style.display = 'flex';
+          document.getElementById('dashboard-banner-area').style.display = 'block';
+          document.getElementById('header-actions-area').style.display = 'flex';
+
+          if (!appState.scenes.includes(appState.currentScene)) {
+            appState.currentScene = appState.scenes[0];
+          }
+          if (!isLocalUpdate) loadSceneData(appState.currentScene);
+          else updateSceneHeaderDropdown(); 
+        }
+        
+        if (connText) connText.innerText = "雲端同步保護中";
+        if (connBadge) connBadge.className = "sync-status online"; 
+      }, (error) => {
+        if (connText) connText.innerText = "離線模式(本地)";
+        if (connBadge) connBadge.className = "sync-status offline";
+      });
+    }
+
+    async function saveSceneData(sceneName) {
+      const targetScene = sceneName || appState.currentScene;
+      if (!targetScene) return;
+
+      if (!isOfflineMode && userId && db) {
+        try {
+          const docRef = doc(db, 'artifacts', appId, 'users', userId, 'inventory_scenes', encodeURIComponent(targetScene));
+          await setDoc(docRef, { name: targetScene, content: appState.data[targetScene], updatedAt: Date.now() });
+        } catch(e) { console.error("Cloud save failed", e); }
+      } else {
+        localStorage.setItem('local_inventory_backup', JSON.stringify(appState));
+      }
+    }
+
+    function initLocalFallback() {
+      document.getElementById('connection-text').innerText = "本地瀏覽器儲存模式";
+      document.getElementById('connection-status').className = "sync-status offline";
+      
+      try {
+        const localData = localStorage.getItem('local_inventory_backup');
+        if (localData) {
+          appState = JSON.parse(localData);
+        }
+      } catch(e){}
+
+      if (appState.scenes.length === 0) {
+        document.getElementById('main-app').style.display = 'none';
+        document.getElementById('welcome-screen').style.display = 'block';
+      } else {
+        document.getElementById('welcome-screen').style.display = 'none';
+        document.getElementById('main-app').style.display = 'flex';
+        document.getElementById('dashboard-banner-area').style.display = 'block';
+        document.getElementById('header-actions-area').style.display = 'flex';
+        loadSceneData(appState.currentScene || appState.scenes[0]);
+      }
+    }
+
+    // --- 日期計算核心邏輯 ---
+    function checkExpiration(dateStr) {
+      if (!dateStr) return 'none';
+      const expDate = new Date(dateStr);
+      const today = new Date();
+      today.setHours(0,0,0,0);
+      
+      const diffTime = expDate - today;
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+      if (diffDays < 0) return 'expired';
+      if (diffDays <= 7) return 'expiring';
+      return 'safe';
+    }
+
+    // --- UI 控制與事件 ---
+    async function handleInitFirstScene() {
+      const input = document.getElementById('init-scene-name');
+      const val = input ? input.value.trim() : '';
+      if (!val) return showToast('warning', '請輸入場景名稱！');
+
+      appState.scenes = [val];
+      appState.currentScene = val;
+      appState.data[val] = { categories: [], locations: [], items: [], historyLogs: [] };
+
+      document.getElementById('welcome-screen').style.display = 'none';
+      document.getElementById('main-app').style.display = 'flex';
+      document.getElementById('dashboard-banner-area').style.display = 'block';
+      document.getElementById('header-actions-area').style.display = 'flex';
+
+      loadSceneData(val);
+      await saveSceneData(val);
+      showToast('success', `場景「${val}」建立完成！`);
+    }
+
+    function loadSceneData(sceneName) {
+      appState.currentScene = sceneName;
+      if (!appState.data[sceneName]) appState.data[sceneName] = { categories: [], locations: [], items: [], historyLogs: [] };
+      document.getElementById('app-title-display').innerText = `備品庫存 (${sceneName})`;
+      updateSceneHeaderDropdown();
+      renderAll();
+    }
+
+    function updateSceneHeaderDropdown() {
+      const select = document.getElementById('header-scene-select');
+      if (!select) return;
+      select.innerHTML = '';
+      appState.scenes.forEach(s => {
+        const opt = document.createElement('option');
+        opt.value = s;
+        opt.textContent = s;
+        if (s === appState.currentScene) opt.selected = true;
+        select.appendChild(opt);
+      });
+    }
+
+    function handleSceneSwitch(newSceneName) {
+      loadSceneData(newSceneName);
+      showToast('success', `已切換至「${newSceneName}」`);
+    }
+
+    async function createNewScene() {
+      const input = document.getElementById('new-scene-input');
+      const val = input ? input.value.trim() : '';
+      if (!val) return showToast('warning', '請輸入欲新增的場景名稱！');
+      if (appState.scenes.includes(val)) return showToast('warning', '此場景已存在！');
+
+      appState.scenes.push(val);
+      appState.data[val] = { categories: [], locations: [], items: [], historyLogs: [] };
+      input.value = '';
+
+      loadSceneData(val);
+      await saveSceneData(val);
+      showToast('success', `已建立並進入場景「${val}」`);
+    }
+
+    async function deleteScene(sceneName) {
+      if (appState.scenes.length <= 1) return showToast('warning', '系統必須保留至少一個場景。');
+      
+      if (confirm(`確定要徹底刪除場景「${sceneName}」嗎？這將會清空該場景所有資料。`)) {
+        delete appState.data[sceneName];
+        appState.scenes = appState.scenes.filter(s => s !== sceneName);
+        if (appState.currentScene === sceneName) appState.currentScene = appState.scenes[0];
+
+        if (!isOfflineMode && userId && db) {
+          try { await deleteDoc(doc(db, 'artifacts', appId, 'users', userId, 'inventory_scenes', encodeURIComponent(sceneName))); } 
+          catch(e) {}
+        } else {
+          localStorage.setItem('local_inventory_backup', JSON.stringify(appState));
+        }
+
+        loadSceneData(appState.currentScene);
+        showToast('error', `已刪除場景「${sceneName}」。`);
+      }
+    }
+
+    function getSceneData() { return appState.data[appState.currentScene]; }
+
+    function findItemById(id) { return getSceneData().items.find(i => i.id === id) || null; }
+
+    function setupGlobalScannerHook() {
+      document.addEventListener('keydown', (e) => {
+        if (currentTab !== 'scanner' || document.querySelector('.modal-overlay.active')) return;
+        const scannerInput = document.getElementById('scanner-input');
+        // Prevent grabbing focus if user is intentionally typing in another input (even though currently there's only one in scanner tab)
+        if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+        if (scannerInput && document.activeElement !== scannerInput) scannerInput.focus();
+      });
+    }
+    
+    // --- 【修復】實作處理掃描輸入 Enter ---
+    function handleScannerKeyPress(e) {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        const val = e.target.value.trim();
+        if (val) {
+          processScannedBarcode(val);
+          e.target.value = '';
+        }
+      }
+    }
+
+    // --- 【修復】實作開啟領用 Modal ---
+    function openUseModal(id) {
+      const item = findItemById(id);
+      if (!item) return;
+      currentUseItem = item;
+      document.getElementById('modal-use-title').innerText = item.name;
+      document.getElementById('modal-use-loc').innerText = item.location ? `📍 存放位置：${item.location}` : '📍 未設定存放位置';
+      document.getElementById('modal-use-stock').innerText = item.stock;
+      document.getElementById('use-qty-input').value = 1;
+      openModal('modal-use');
+    }
+
+    // --- 4. 條碼引擎與視覺回饋 ---
+    function findItemAndBarcodeMapping(barcode) {
+      const data = getSceneData();
+      for (const item of data.items) {
+        if (item.barcode === barcode) return { item, match: { code: barcode, qty: 1, name: '主要包裝' } };
+        if (item.barcodes) {
+          for (const b of item.barcodes) {
+            if (b.code === barcode) return { item, match: b };
+          }
+        }
+      }
+      return null;
+    }
+
+    function setScanMode(mode) {
+      currentScanMode = mode;
+      const inBtn = document.getElementById('scan-mode-in-btn');
+      const outBtn = document.getElementById('scan-mode-out-btn');
+      const scanInput = document.getElementById('scanner-input');
+      
+      if (mode === 'in') {
+        if (inBtn) inBtn.className = 'mode-switch-btn active-in';
+        if (outBtn) outBtn.className = 'mode-switch-btn';
+        if (scanInput) scanInput.className = 'large-barcode-input';
+      } else {
+        if (inBtn) inBtn.className = 'mode-switch-btn';
+        if (outBtn) outBtn.className = 'mode-switch-btn active-out';
+        if (scanInput) scanInput.className = 'large-barcode-input mode-out';
+      }
+      if (scanInput) scanInput.focus();
+    }
+
+    function updateScanFeedbackHTML(status, barcode, item, customMsg) {
+      const feedback = document.getElementById('scan-feedback');
+      if (!feedback) return;
+
+      const isOut = currentScanMode === 'out';
+      const statusTitle = status === 'error' ? '操作失敗' : (status === 'new' ? '發現新商品' : (isOut ? '扣減庫存成功 (-1)' : '加庫存成功 (+1)'));
+      const statusColor = status === 'error' ? 'var(--rose)' : (status === 'new' ? 'var(--amber)' : (isOut ? 'var(--rose)' : 'var(--emerald)'));
+      const bg = status === 'error' ? '#fee2e2' : (status === 'new' ? '#fef3c7' : (isOut ? '#fce8e6' : '#e6f4ea'));
+
+      feedback.innerHTML = `
+        <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--border-color); padding-bottom: 0.5rem; margin-bottom: 0.75rem">
+          <span style="font-size:0.7rem; font-weight:800; color:${statusColor}; background-color:${bg}; padding: 0.2rem 0.5rem; border-radius:4px">${statusTitle}</span>
+          <span style="font-family:monospace; font-size:0.75rem; color:var(--text-muted)">Barcode: ${barcode}</span>
+        </div>
+        ${item ? `
+        <div style="display:flex; gap:0.75rem; align-items:center">
+          <div class="img-fallback" style="width:48px; height:48px; font-size: 1.25rem; border-radius: 8px;">📦</div>
+          <div style="text-align: left;">
+            <h4 style="font-size:0.85rem; font-weight:800">${item.name}</h4>
+            <p style="font-size:0.75rem; color:var(--text-muted); margin-top:0.15rem">更新後庫存剩餘：<b style="color:var(--primary); font-size:0.9rem">${item.stock}</b> 份</p>
+            <p style="font-size:0.7rem; color:var(--text-muted); margin-top:0.15rem">${customMsg}</p>
+          </div>
+        </div>` : `
+        <p style="font-size:0.8rem; font-weight:700; color:var(--text-main); text-align:center; padding:0.5rem 0">${customMsg}</p>`}
+      `;
+    }
+
+    async function processScannedBarcode(barcode) {
+      const lookup = findItemAndBarcodeMapping(barcode);
+      const data = getSceneData();
+
+      if (currentScanMode === 'in') {
+        if (lookup) {
+          const { item, match } = lookup;
+          item.stock += match.qty;
+
+          data.historyLogs.unshift({
+            id: `h_${Date.now()}`, time: getFormattedTime(), itemName: item.name,
+            type: 'in', quantity: match.qty, note: `條碼槍自動加庫存 (+${match.qty})`
+          });
+
+          updateScanFeedbackHTML('success', barcode, item, `自動辨識包裝：「${match.name}」，已加 ${match.qty} 份在庫！`);
+          showToast('success', `「${item.name}」已辨識為 ${match.name} 補貨 +${match.qty} 份！`);
+          
+          renderAll(); 
+          await saveSceneData(); 
+        } else {
+          scannedNewBarcodeTemp = barcode;
+          openBarcodeWizard(barcode);
+        }
+      } else {
+        if (lookup) {
+          const { item, match } = lookup;
+          if (item.stock >= match.qty) {
+            item.stock -= match.qty;
+
+            data.historyLogs.unshift({
+              id: `h_${Date.now()}`, time: getFormattedTime(), itemName: item.name,
+              type: 'out', quantity: match.qty, note: `條碼槍自動扣除領用 (-${match.qty})`
+            });
+
+            updateScanFeedbackHTML('success', barcode, item, `自動辨識包裝：「${match.name}」，已扣除 ${match.qty} 份在庫！`);
+            showToast('info', `「${item.name}」已辨識為 ${match.name} 領用扣除 -${match.qty} 份`);
+            
+            renderAll();
+            await saveSceneData();
+          } else {
+            updateScanFeedbackHTML('error', barcode, item, `【警告】「${item.name}」目前在庫量不足以扣除此包裝 (${match.qty}份)！`);
+            showToast('warning', '庫存不足，無法領用包裝！');
+          }
+        } else {
+          updateScanFeedbackHTML('error', barcode, null, '【失敗】此條碼尚未關聯至任何現有商品，無法扣除庫存。');
+          showToast('warning', '未註冊條碼，無法扣除庫存！');
+        }
+      }
+    }
+
+    function openAddModal(scannedCode = '') {
+      document.getElementById('modal-edit-head-title').innerText = '手動新增備品建檔';
+      document.getElementById('edit-item-id').value = '';
+      document.getElementById('edit-barcode').value = scannedCode || Math.floor(1000000000000 + Math.random() * 9000000000000).toString();
+      document.getElementById('edit-name').value = '';
+      document.getElementById('edit-stock').value = 1;
+      document.getElementById('edit-min-stock').value = 2;
+      document.getElementById('edit-expiry-date').value = ''; 
+      
+      fillEditSelects();
+      openModal('modal-edit');
+    }
+
+    function openEditModal(id) {
+      const item = findItemById(id);
+      if (!item) return;
+
+      document.getElementById('modal-edit-head-title').innerText = '修改備品資料';
+      document.getElementById('edit-item-id').value = item.id;
+      document.getElementById('edit-barcode').value = item.barcode;
+      document.getElementById('edit-name').value = item.name;
+      document.getElementById('edit-stock').value = item.stock;
+      document.getElementById('edit-min-stock').value = item.minStock;
+      document.getElementById('edit-expiry-date').value = item.expiryDate || '';
+
+      fillEditSelects();
+      document.getElementById('edit-category').value = item.category;
+      document.getElementById('edit-location').value = item.location;
+
+      openModal('modal-edit');
+    }
+
+    async function saveItem() {
+      try {
+        const itemId = document.getElementById('edit-item-id').value;
+        const barcode = document.getElementById('edit-barcode').value.trim();
+        const name = document.getElementById('edit-name').value.trim();
+        const category = document.getElementById('edit-category').value || '(無自訂分類)';
+        const location = document.getElementById('edit-location').value || '(無自訂位置)';
+        const stock = parseInt(document.getElementById('edit-stock').value) || 0;
+        const minStock = parseInt(document.getElementById('edit-min-stock').value) || 1;
+        const expiryDate = document.getElementById('edit-expiry-date').value; 
+
+        if (!barcode || !name) return showToast('warning', '品名與主要條碼為必填欄位！');
+
+        const data = getSceneData();
+
+        if (itemId) {
+          const itemIndex = data.items.findIndex(i => i.id === itemId);
+          if (itemIndex > -1) {
+            data.items[itemIndex] = {
+              id: itemId, barcode, name, category, location, stock, minStock, expiryDate, barcodes: data.items[itemIndex].barcodes || []
+            };
+          }
+          showToast('success', `「${name}」修改完成！`);
+        } else {
+          if (data.items.some(i => i.barcode === barcode)) return showToast('error', '條碼已存在！');
+
+          const newItem = {
+            id: `item_${Date.now()}`, barcode, name, category, location, stock, minStock, expiryDate, barcodes: []
+          };
+          data.items.push(newItem);
+          data.historyLogs.unshift({ id: `h_${Date.now()}`, time: getFormattedTime(), itemName: name, type: 'in', quantity: stock, note: '手動建檔' });
+          showToast('success', `新備品「${name}」已存檔！`);
+        }
+
+        closeModal('modal-edit');
+        renderAll();
+        await saveSceneData();
+      } catch (err) { showToast('error', `系統錯誤：${err.message}`); }
+    }
+
+    function filterExpiringItems() {
+      const filterSelect = document.getElementById('filter-status');
+      if (filterSelect) {
+        filterSelect.value = 'Expiring';
+        handleFilter();
+        showToast('info', '已為您篩選出「即期/過期」的商品');
+      }
+    }
+
+    function renderBadges() {
+      const data = getSceneData();
+      if (!data) return;
+
+      const lowStockItems = data.items.filter(item => Number(item.stock) <= Number(item.minStock));
+      
+      let expiringCount = 0;
+      data.items.forEach(item => {
+        const expStatus = checkExpiration(item.expiryDate);
+        if (expStatus === 'expired' || expStatus === 'expiring') expiringCount++;
+      });
+
+      document.getElementById('dash-scene-name').innerText = appState.currentScene;
+      document.getElementById('dash-total-items').innerText = `${data.items.length} 款`;
+      
+      const dashLow = document.getElementById('dash-low-stock');
+      if (dashLow) {
+        dashLow.innerText = `${lowStockItems.length} 件`;
+        dashLow.className = lowStockItems.length > 0 ? "badge-low-stock" : "badge-low-stock safe";
+      }
+
+      const dashExpiring = document.getElementById('dash-expiring');
+      if (dashExpiring) {
+        dashExpiring.innerText = `${expiringCount} 件`;
+        dashExpiring.className = expiringCount > 0 ? "badge-expiring" : "badge-expiring safe";
+      }
+    }
+
+    function renderInventoryGrid() {
+      const container = document.getElementById('inventory-grid-container');
+      if (!container) return;
+      const data = getSceneData();
+      
+      const query = document.getElementById('search-input')?.value.toLowerCase() || '';
+      const statusFilter = document.getElementById('filter-status')?.value || 'All';
+      const catFilter = document.getElementById('filter-category')?.value || 'All';
+      const locFilter = document.getElementById('filter-location')?.value || 'All';
+      const sortVal = document.getElementById('filter-sort')?.value || 'default';
+
+      let filtered = data.items.filter(item => {
+        const matchesQuery = item.name.toLowerCase().includes(query) || item.barcode.includes(query) || item.location.toLowerCase().includes(query);
+        const matchesCat = catFilter === 'All' || item.category === catFilter;
+        const matchesLoc = locFilter === 'All' || item.location === locFilter;
+        
+        let matchesStatus = true;
+        if (statusFilter === 'Expiring') {
+          const st = checkExpiration(item.expiryDate);
+          matchesStatus = (st === 'expired' || st === 'expiring');
+        }
+
+        return matchesQuery && matchesCat && matchesLoc && matchesStatus;
+      });
+
+      if (sortVal === 'stock-asc') filtered.sort((a, b) => a.stock - b.stock);
+      else if (sortVal === 'stock-desc') filtered.sort((a, b) => b.stock - a.stock);
+      else if (sortVal === 'expiry-asc') {
+        filtered.sort((a, b) => {
+          if (!a.expiryDate && !b.expiryDate) return 0;
+          if (!a.expiryDate) return 1;
+          if (!b.expiryDate) return -1;
+          return new Date(a.expiryDate) - new Date(b.expiryDate);
+        });
+      }
+
+      if (filtered.length === 0) {
+        container.innerHTML = `<div style="grid-column: 1/-1; text-align:center; padding: 4rem; color: var(--text-muted)"><h3 style="font-weight:700;">查無相符備品</h3></div>`;
+        return;
+      }
+
+      container.innerHTML = filtered.map(item => {
+        const isLow = item.stock <= item.minStock;
+        const expStatus = checkExpiration(item.expiryDate);
+        
+        let dateHtml = '';
+        let cardClass = isLow ? 'low-stock' : '';
+        let expBadge = '';
+
+        if (expStatus === 'expired') {
+          cardClass = 'expired';
+          expBadge = `<div class="expired-badge">⚠️ 已過期</div>`;
+          dateHtml = `<span style="color:var(--rose); font-weight:800;">過期日: ${item.expiryDate}</span>`;
+        } else if (expStatus === 'expiring') {
+          expBadge = `<div class="expired-badge" style="background-color:var(--amber);">⏳ 即期</div>`;
+          dateHtml = `<span style="color:var(--amber); font-weight:800;">即將到期: ${item.expiryDate}</span>`;
+        } else if (item.expiryDate) {
+          dateHtml = `<span style="color:var(--text-muted);">📅 期限: ${item.expiryDate}</span>`;
+        }
+
+        return `
+          <div class="item-card ${cardClass}">
+            ${isLow ? '<div class="low-stock-badge">低存量警戒</div>' : ''}
+            ${expBadge}
+            <div class="item-info">
+              <div>
+                <div class="item-tags">
+                  <span class="item-tag-cat">${item.category}</span>
+                  <span class="item-tag-loc">${item.location}</span>
+                </div>
+                <h4 class="item-title" onclick="window.openUseModal('${item.id}')" title="點擊快捷領用">${item.name}</h4>
+                <div class="item-barcode">條碼: ${item.barcode}</div>
+                ${dateHtml ? `<div class="item-expiry">${dateHtml}</div>` : ''}
+              </div>
+              <div class="item-card-bottom">
+                <div style="display:flex; flex-direction:column">
+                  <span style="font-size:0.6rem; color:var(--text-muted); font-weight:700">目前在庫剩餘</span>
+                  <span class="item-stock-val" style="color: ${isLow ? 'var(--rose)' : 'var(--text-main)'}">${item.stock} 份</span>
+                </div>
+                <div class="item-card-actions">
+                  <button onclick="window.quickReplenish('${item.id}')" class="icon-btn primary btn" title="快速加庫存">+</button>
+                  <button onclick="window.openEditModal('${item.id}')" class="icon-btn btn btn-secondary" title="編輯資料">✎</button>
+                  <button onclick="window.triggerDelete('${item.id}')" class="icon-btn rose btn" style="background:var(--rose); color:white;" title="刪除備品">✕</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    // --- Utility 函式綁定 ---
+    function fillEditSelects() {
+      const data = getSceneData();
+      document.getElementById('edit-category').innerHTML = '<option value="">(無自訂分類)</option>' + data.categories.map(c => `<option value="${c}">${c}</option>`).join('');
+      document.getElementById('edit-location').innerHTML = '<option value="">(無自訂位置)</option>' + data.locations.map(l => `<option value="${l}">${l}</option>`).join('');
+    }
+    
+    function renderDropdowns() {
+      const data = getSceneData();
+      if (!data) return;
+      const catHTML = '<option value="All">📂 所有分類</option>' + data.categories.map(c => `<option value="${c}">${c}</option>`).join('');
+      const locHTML = '<option value="All">📍 所有存放位置</option>' + data.locations.map(l => `<option value="${l}">${l}</option>`).join('');
+      
+      const filterCat = document.getElementById('filter-category');
+      const filterLoc = document.getElementById('filter-location');
+      
+      if (filterCat) { const prev = filterCat.value; filterCat.innerHTML = catHTML; filterCat.value = prev || 'All'; }
+      if (filterLoc) { const prev = filterLoc.value; filterLoc.innerHTML = locHTML; filterLoc.value = prev || 'All'; }
+    }
+
+    function renderSettingsLists() {
+      const data = getSceneData();
+      const catList = document.getElementById('category-list-container');
+      const locList = document.getElementById('location-list-container');
+      if (catList) catList.innerHTML = data.categories.map(c => `<div class="list-item"><span>${c}</span><button onclick="window.deleteCategory('${c}')" class="btn btn-rose" style="padding:0.2rem">✕</button></div>`).join('');
+      if (locList) locList.innerHTML = data.locations.map(l => `<div class="list-item"><span>${l}</span><button onclick="window.deleteLocation('${l}')" class="btn btn-rose" style="padding:0.2rem">✕</button></div>`).join('');
+    }
+    
+    // --- 【修復】實作設定頁面的場景列表 ---
+    function renderSceneListTab() {
+      const container = document.getElementById('scene-list-container');
+      if (!container) return;
+      container.innerHTML = appState.scenes.map(s => `
+        <div class="list-item" style="padding: 1rem;">
+          <span style="font-weight:700">${s} ${s === appState.currentScene ? '<span class="badge badge-in" style="margin-left:0.5rem;">目前使用中</span>' : ''}</span>
+          ${s !== appState.currentScene ? `<button onclick="window.deleteScene('${s}')" class="btn btn-rose" style="padding:0.3rem 0.6rem; font-size:0.75rem">刪除</button>` : ''}
+        </div>
+      `).join('');
+    }
+
+    function renderAll() { renderBadges(); renderDropdowns(); renderInventoryGrid(); renderSettingsLists(); renderSceneListTab(); renderHistoryLogs(); }
+
+    function openExportModal() { document.getElementById('export-current-name').innerText = appState.currentScene; openModal('modal-export-options'); }
+    function exportFullBackup() {
+      const blob = new Blob([JSON.stringify(appState, null, 2)], { type: 'application/json' });
+      const link = document.createElement("a"); link.href = URL.createObjectURL(blob);
+      link.download = `備品庫存系統_完整備份_${new Date().toISOString().slice(0,10)}.json`; link.click();
+      closeModal('modal-export-options'); showToast('success', '所有場景資料已備份匯出！');
+    }
+    function exportCurrentScene() {
+      const singleSceneData = { name: appState.currentScene, content: appState.data[appState.currentScene] };
+      const blob = new Blob([JSON.stringify(singleSceneData, null, 2)], { type: 'application/json' });
+      const link = document.createElement("a"); link.href = URL.createObjectURL(blob);
+      link.download = `庫存備份_${appState.currentScene}_${new Date().toISOString().slice(0,10)}.json`; link.click();
+      closeModal('modal-export-options'); showToast('success', `單一場景「${appState.currentScene}」資料已匯出！`);
+    }
+
+    function importJSONBackup(event) {
+      const file = event.target.files[0]; if (!file) return;
+      const reader = new FileReader();
+      reader.onload = async (e) => {
+        try {
+          const parsed = JSON.parse(e.target.result);
+          let importedCount = 0; let scenesToImport = [];
+          if (parsed.scenes && Array.isArray(parsed.scenes)) {
+            parsed.scenes.forEach(s => { if (parsed.data && parsed.data[s]) scenesToImport.push({ name: s, data: parsed.data[s] }); });
+          } else if (parsed.name && parsed.content) {
+            scenesToImport.push({ name: parsed.name, data: parsed.content });
+          } else return showToast('error', '未知的 JSON 備份檔格式！');
+
+          for (const sceneObj of scenesToImport) {
+            let newName = sceneObj.name;
+            if (appState.scenes.includes(newName)) newName = `${newName} (匯入_${Math.floor(Math.random()*100)})`;
+            appState.scenes.push(newName); appState.data[newName] = sceneObj.data;
+            await saveSceneData(newName); importedCount++;
+          }
+          if (importedCount > 0) {
+            loadSceneData(appState.scenes[appState.scenes.length - 1]);
+            showToast('success', `✅ 成功合併匯入 ${importedCount} 個場景`);
+          }
+        } catch (err) { showToast('error', '解析備份 JSON 失敗！'); }
+        event.target.value = '';
+      };
+      reader.readAsText(file);
+    }
+
+    function exportExcelCSV() {
+      const data = getSceneData();
+      if (data.items.length === 0) return showToast('warning', '無資料可匯出！');
+      let csvContent = "\uFEFF商品名稱,主要條碼,存放位置,分類,目前數量,到期日,安全存量\n";
+      data.items.forEach(item => { csvContent += `"${item.name}","${item.barcode}","${item.location}","${item.category}",${item.stock},"${item.expiryDate || ''}",${item.minStock}\n`; });
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement("a"); link.href = URL.createObjectURL(blob);
+      link.download = `庫存資料表_${appState.currentScene}_${new Date().toISOString().slice(0,10)}.csv`; link.click();
+      showToast('success', 'Excel 專用 CSV 匯出完成！');
+    }
+
+    function getFormattedTime() {
+      const now = new Date();
+      return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`;
+    }
+
+    function showToast(type, message) {
+      const toast = document.getElementById('toast');
+      const text = document.getElementById('toast-text');
+      if (!toast || !text) return;
+      toast.className = `toast-box active toast-${type}`; text.innerText = message;
+      setTimeout(() => toast.classList.remove('active'), 3000);
+    }
+
+    // Modal Operations
+    function closeModal(id) { document.getElementById(id)?.classList.remove('active'); }
+    function openModal(id) { document.getElementById(id)?.classList.add('active'); }
+    function switchTab(tabId) {
+      currentTab = tabId;
+      document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+      document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+      document.getElementById(`tab-${tabId}`)?.classList.add('active');
+      document.getElementById(`nav-${tabId}`)?.classList.add('active');
+    }
+    
+    function handleSearch() { renderInventoryGrid(); }
+    function handleFilter() { renderInventoryGrid(); }
+    function handleSort() { renderInventoryGrid(); }
+    
+    function changeUseQty(val) {
+      const input = document.getElementById('use-qty-input');
+      if (!input || !currentUseItem) return;
+      let v = (parseInt(input.value) || 1) + val;
+      if (v < 1) v = 1; if (v > currentUseItem.stock) v = currentUseItem.stock;
+      input.value = v;
+    }
+    
+    function setUseQty(val) {
+      const input = document.getElementById('use-qty-input');
+      if (!input || !currentUseItem) return;
+      input.value = val > currentUseItem.stock ? currentUseItem.stock : val;
+    }
+
+    async function confirmUse() {
+      const input = document.getElementById('use-qty-input');
+      const qty = parseInt(input.value) || 1;
+      const data = getSceneData();
+      if (currentUseItem.stock < qty) return showToast('error', '領用失敗：數量不足！');
+      currentUseItem.stock -= qty;
+      data.historyLogs.unshift({ id: `h_${Date.now()}`, time: getFormattedTime(), itemName: currentUseItem.name, type: 'out', quantity: qty, note: '快速領用' });
+      closeModal('modal-use'); renderAll(); await saveSceneData();
+      showToast('info', `已領用「${currentUseItem.name}」共 ${qty} 份`);
+    }
+
+    function triggerDelete(id) {
+      const item = findItemById(id); if (!item) return;
+      deleteIdTemp = id;
+      document.getElementById('confirm-title').innerText = `確定刪除「${item.name}」？`;
+      document.getElementById('confirm-yes-btn').onclick = async () => {
+        const data = getSceneData();
+        data.items = data.items.filter(i => i.id !== deleteIdTemp);
+        closeModal('modal-confirm'); renderAll(); await saveSceneData(); showToast('error', '已移除。');
+      };
+      openModal('modal-confirm');
+    }
+
+    async function addCategory() { const input = document.getElementById('new-cat-input'); const val = input ? input.value.trim() : ''; if (!val) return; const data = getSceneData(); if (data.categories.includes(val)) return showToast('warning', '分類已存在！'); data.categories.push(val); input.value = ''; renderAll(); await saveSceneData(); showToast('success', '建立成功'); }
+    async function deleteCategory(cat) { const data = getSceneData(); data.categories = data.categories.filter(c => c !== cat); renderAll(); await saveSceneData(); }
+    async function addLocation() { const input = document.getElementById('new-loc-input'); const val = input ? input.value.trim() : ''; if (!val) return; const data = getSceneData(); if (data.locations.includes(val)) return showToast('warning', '位置已存在！'); data.locations.push(val); input.value = ''; renderAll(); await saveSceneData(); showToast('success', '建立成功'); }
+    async function deleteLocation(loc) { const data = getSceneData(); data.locations = data.locations.filter(l => l !== loc); renderAll(); await saveSceneData(); }
+    function clearHistoryLog() {
+      document.getElementById('confirm-title').innerText = '確定要清空日誌嗎？';
+      document.getElementById('confirm-yes-btn').onclick = async () => { getSceneData().historyLogs = []; closeModal('modal-confirm'); renderAll(); await saveSceneData(); showToast('info', '日誌已清空。'); };
+      openModal('modal-confirm');
+    }
+    function renderHistoryLogs() {
+      const tbody = document.getElementById('history-table-body');
+      const data = getSceneData();
+      if (!tbody || !data) return;
+      if (data.historyLogs.length === 0) { tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:var(--text-muted)">無異動明細</td></tr>'; return; }
+      tbody.innerHTML = data.historyLogs.map(log => {
+        const isIN = log.type === 'in';
+        return `<tr><td style="font-family:monospace; color:var(--text-muted)">${log.time}</td><td style="font-weight:700">${log.itemName}</td><td style="text-align:center"><span class="badge ${isIN ? 'badge-in' : 'badge-out'}">${isIN ? '補貨入庫' : '領用扣減'}</span></td><td style="text-align:center; font-weight:800; color: ${isIN ? 'var(--emerald)' : 'var(--rose)'}">${isIN ? '+' : '-'}${log.quantity}</td><td>${log.note || ''}</td></tr>`;
+      }).join('');
+    }
+
+    async function quickReplenish(id) {
+      const data = getSceneData();
+      const item = findItemById(id);
+      if (!item) return;
+
+      item.stock += 1;
+      data.historyLogs.unshift({ id: `h_${Date.now()}`, time: getFormattedTime(), itemName: item.name, type: 'in', quantity: 1, note: '快捷加 1 補貨' });
+      renderAll();
+      await saveSceneData();
+      showToast('success', `「${item.name}」已快速補貨 +1 份`);
+    }
+
+    function addNewBarcodeMappingRow(code = '', name = '', qty = 24) {
+      const container = document.getElementById('barcode-mappings-container');
+      if (!container) return;
+      const rowId = `map_row_${Date.now()}${Math.random().toString(36).slice(2, 6)}`;
+      const row = document.createElement('div');
+      row.className = 'barcode-mapping-row';
+      row.id = rowId;
+      row.innerHTML = `
+        <input type="text" placeholder="多重條碼" value="${code}" class="form-input mapping-input-code" required>
+        <input type="text" placeholder="包裝名(例：整箱裝)" value="${name}" class="form-input mapping-input-name" required>
+        <input type="number" min="1" value="${qty}" class="form-input mapping-input-qty" required>
+        <button type="button" onclick="document.getElementById('${rowId}').remove()" class="btn btn-rose" style="padding: 0.5rem">✕</button>
+      `;
+      container.appendChild(row);
+    }
+
+    function openBarcodeWizard(barcode) {
+      const barcodeEl = document.getElementById('wizard-scanned-barcode');
+      if (barcodeEl) barcodeEl.innerText = barcode;
+      
+      const select = document.getElementById('wizard-link-item-select');
+      const data = getSceneData();
+
+      if (select) {
+        select.innerHTML = data.items.length === 0 
+          ? '<option value="">(無現有備品可供關聯，請先新增商品)</option>'
+          : data.items.map(item => `<option value="${item.id}">${item.name} (主要條碼: ${item.barcode})</option>`).join('');
+      }
+      
+      document.getElementById('wizard-link-pkg-name').value = '整箱裝';
+      document.getElementById('wizard-link-qty').value = '24';
+      openModal('modal-new-barcode-wizard');
+    }
+
+    function triggerWizardCreateNew() {
+      closeModal('modal-new-barcode-wizard');
+      openAddModal(scannedNewBarcodeTemp);
+    }
+
+    async function triggerWizardLinkExisting() {
+      const itemId = document.getElementById('wizard-link-item-select')?.value;
+      const pkgName = document.getElementById('wizard-link-pkg-name')?.value.trim();
+      const qty = parseInt(document.getElementById('wizard-link-qty')?.value) || 24;
+
+      if (!itemId) return showToast('warning', '沒有可選擇連結的現有備品！');
+      if (!pkgName) return showToast('warning', '請輸入包裝換算說明名稱！');
+
+      const item = findItemById(itemId);
+      if (item) {
+        if (!item.barcodes) item.barcodes = [];
+        item.barcodes.push({
+          code: scannedNewBarcodeTemp, qty: qty, name: `${pkgName} (${qty}入)`
+        });
+        item.stock += qty;
+
+        getSceneData().historyLogs.unshift({
+          id: `h_${Date.now()}`, time: getFormattedTime(), itemName: item.name,
+          type: 'in', quantity: qty, note: `設定新關聯包裝 [${pkgName}] 並入庫`
+        });
+
+        closeModal('modal-new-barcode-wizard');
+        renderAll();
+        await saveSceneData();
+        
+        showToast('success', `連結成功！嗶「${scannedNewBarcodeTemp}」代表「${item.name}」的 ${pkgName} (+${qty})`);
+        updateScanFeedbackHTML('success', scannedNewBarcodeTemp, item, `已成功設定為「${item.name}」的關聯條碼 (+${qty})`);
+      }
+    }
+
+    function triggerFileInput() { document.getElementById('edit-image-file')?.click(); }
+
+    function previewLocalImage(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = e => {
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          const MAX_WIDTH = 240; 
+          const scale = MAX_WIDTH / img.width;
+          canvas.width = MAX_WIDTH;
+          canvas.height = img.height * scale;
+
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+          selectedImageBase64 = canvas.toDataURL('image/jpeg', 0.7);
+
+          const preview = document.getElementById('local-image-preview');
+          const uploadPlaceholder = document.getElementById('upload-placeholder');
+          if (preview) { preview.src = selectedImageBase64; preview.style.display = 'block'; }
+          if (uploadPlaceholder) uploadPlaceholder.style.display = 'none';
+          
+          document.querySelectorAll('.preset-chip').forEach(c => c.classList.remove('active'));
+        };
+        img.src = e.target.result;
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function simulateScan(barcode) { processScannedBarcode(barcode); }
+
+    Object.assign(window, {
+      handleSceneSwitch, createNewScene, deleteScene, handleInitFirstScene,
+      saveItem, confirmUse, quickReplenish, triggerDelete, 
+      openExportModal, exportFullBackup, exportCurrentScene, importJSONBackup, 
+      exportExcelCSV, addCategory, addLocation, deleteCategory, deleteLocation, 
+      clearHistoryLog, switchTab, setScanMode, openUseModal, openAddModal, 
+      openEditModal, closeModal, openModal, changeUseQty, setUseQty,
+      handleSearch, handleFilter, handleSort, handleScannerKeyPress, filterExpiringItems,
+      addNewBarcodeMappingRow, openBarcodeWizard, triggerWizardCreateNew,
+      triggerWizardLinkExisting, triggerFileInput, previewLocalImage, simulateScan
+    });
+  </script>
+</body>
+</html>
