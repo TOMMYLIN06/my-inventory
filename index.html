@@ -903,10 +903,8 @@
       const targetScene = sceneName || appState.currentScene;
       if (!targetScene) return;
 
-      // 1. 本地端：立刻寫入 LocalStorage，確保斷電不遺失
       localStorage.setItem('local_inventory_backup', JSON.stringify(appState));
 
-      // 2. 雲端端：進入 20 秒打包等待
       if (!isOfflineMode && userId && db && navigator.onLine) {
         pendingSceneToSave = targetScene; 
         const connBadge = document.getElementById('connection-status');
