@@ -33,9 +33,11 @@
     .logo-title h1 { font-size: 1.25rem; font-weight: 800; letter-spacing: -0.025em; }
     .header-actions { display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; }
     
-    .sync-status { padding: 0.4rem 0.8rem; border-radius: 8px; font-size: 0.8rem; font-weight: 700; display: flex; align-items: center; gap: 0.4rem; background-color: #1e293b; transition: all 0.3s; }
+    .sync-status { padding: 0.4rem 0.8rem; border-radius: 8px; font-size: 0.8rem; font-weight: 700; display: flex; align-items: center; gap: 0.4rem; background-color: #1e293b; transition: all 0.3s; color: white; }
     .sync-status.offline { color: #94a3b8; border: 1px solid #334155; }
     .sync-status.online { color: #10b981; border: 1px solid #064e3b; }
+    .sync-status.pending { color: #f59e0b; border: 1px solid #b45309; }
+    
     .user-profile { display: flex; align-items: center; gap: 0.5rem; font-size: 0.8rem; color: #cbd5e1; background: #1e293b; padding: 0.4rem 0.8rem; border-radius: 8px; border: 1px solid #334155;}
 
     .flat-status-bar { background-color: #1e293b; color: #94a3b8; border-bottom: 1px solid #334155; padding: 0.45rem 1.5rem; font-size: 0.78rem; font-weight: 700; z-index: 30; box-shadow: inset 0 -1px 0 rgba(255,255,0,0.05); }
@@ -204,6 +206,7 @@
       </div>
 
       <div class="header-actions" id="header-actions-area" style="display: none;">
+        <!-- 上方連結 -->
         <a href="https://tommylin06.github.io/my-inventory/" target="_blank" class="web-link-badge" title="前往線上網頁版">
           🌐 前往網頁版
         </a>
@@ -211,9 +214,18 @@
           <span style="font-size: 0.75rem; color: #94a3b8; font-weight:700">🎬 場景：</span>
           <select id="header-scene-select" onchange="window.handleSceneSwitch(this.value)" class="scene-select"></select>
         </div>
-        <div id="connection-status" class="sync-status offline" title="連線狀態">
-          <span class="pulse-dot" style="background-color: currentColor"></span>
+        
+        <!-- 連線狀態與手動同步按鈕 -->
+        <div style="display:flex; align-items:center; gap:0.5rem">
+          <div id="connection-status" class="sync-status offline" title="連線狀態">
+            <span class="pulse-dot" style="background-color: currentColor"></span><span id="connection-status-text">未連線</span>
+          </div>
+          <!-- 手動同步按鈕 -->
+          <button id="force-sync-btn" onclick="window.forceManualSync()" class="btn btn-secondary" style="display:none; padding: 0.3rem 0.6rem; font-size: 0.75rem; border-color: #b45309; color: #b45309;">
+            ⬆️ 立即同步
+          </button>
         </div>
+
         <div class="user-profile" id="user-profile">
           <span id="user-email">使用者</span>
           <button id="logout-btn" onclick="window.logoutUser()" class="btn btn-secondary" style="padding: 0.2rem 0.5rem; font-size: 0.7rem; margin-left: 0.5rem; color: var(--text-main);">登出</button>
@@ -222,7 +234,7 @@
     </div>
   </header>
 
-  <!-- 🚀 防止白畫面的載入中提示 -->
+  <!-- 防止白畫面的載入中提示 -->
   <div id="loading-screen" style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 80vh; background: var(--bg-main);">
     <div class="pulse-dot" style="width: 40px; height: 40px; margin-bottom: 1.5rem; background-color: var(--primary);"></div>
     <h2 style="color: var(--slate-dark); font-size: 1.25rem; font-weight: 800; margin-bottom: 0.5rem;">系統初始化中...</h2>
@@ -231,9 +243,11 @@
 
   <!-- 登入與註冊介面 -->
   <div id="auth-screen" style="display: none;">
+    <!-- 單機版專用提示框 -->
     <div id="local-web-alert" style="display: none; max-width: 400px; margin: 2rem auto -2rem auto; background: #e0e7ff; border: 1px solid #c7d2fe; padding: 1rem; border-radius: 12px; text-align: center;">
-      <p style="font-size: 0.85rem; color: var(--primary); font-weight: 700; margin-bottom: 0.5rem;">您目前開啟的是單機下載版 (無雲端功能)</p>
-      <p style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 0.75rem;">因瀏覽器安全限制，下載的檔案無法登入帳號。請在下方點選「單機模式」使用，事後再透過 JSON 匯出功能與網頁版合併。</p>
+      <p style="font-size: 0.85rem; color: var(--primary); font-weight: 700; margin-bottom: 0.5rem;">您目前開啟的是單機下載版</p>
+      <p style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 0.75rem;">單機版可使用「信箱密碼」登入來同步雲端資料，或直接使用單機模式。<br>(Google 登入僅限網頁版)</p>
+      <a href="https://tommylin06.github.io/my-inventory/" target="_blank" class="btn btn-primary" style="display: inline-flex; font-size: 0.8rem; margin-top: 0.5rem;">👉 前往線上網頁版</a>
     </div>
 
     <div class="auth-container">
@@ -291,7 +305,7 @@
     <div style="background: #e0e7ff; color: var(--primary); width: 64px; height: 64px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1.5rem;">
       <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
     </div>
-    <h2 style="font-size: 1.4rem; font-weight: 800; margin-bottom: 0.5rem;">建立第一個場景</h2>
+    <h2 style="font-size: 1.4rem; font-weight: 800; margin-bottom: 0.5rem;">🎬 建立第一個場景</h2>
     <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1.5rem; line-height: 1.5;">
       請先輸入您的第一個儲藏場景名稱（例如：大倉庫、客廳櫃），我們將為您建立專屬的管理空間。
     </p>
@@ -320,6 +334,7 @@
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>歷史日誌
       </button>
       
+      <!-- 側邊欄連結 -->
       <a href="https://tommylin06.github.io/my-inventory/" target="_blank" class="nav-btn" style="color: var(--primary); background: #e0e7ff; margin-top: 1rem; text-decoration: none;">
         🌐 前往線上網頁版
       </a>
@@ -568,7 +583,7 @@
     </div>
   </div>
 
-  <!-- 🌟 新增：匯入衝突選擇 Modal -->
+  <!-- 匯入衝突選擇 Modal -->
   <div id="modal-import-conflict" class="modal-overlay">
     <div class="modal-box" style="max-width: 420px; text-align: center;">
       <h3 class="modal-title" style="margin-bottom: 0.5rem; border: none; color: var(--rose);">⚠️ 發現同名場景</h3>
@@ -608,7 +623,6 @@
 
   <!-- JavaScript 邏輯區 -->
   <script>
-    // 🌟 動態載入 Firebase
     const firebaseConfig = {
       apiKey: "AIzaSyCY3z9TBJ5PV-c2psZ1OYSV0Y99hjhaHps",
       authDomain: "myinventory-438dc.firebaseapp.com",
@@ -618,7 +632,6 @@
       appId: "1:875600182897:web:1e448eacd53e078cda65d0"
     };
 
-    // 宣告 Firebase 變數
     let app, auth, db, googleProvider;
     let signInWithEmailAndPassword, createUserWithEmailAndPassword, GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult, signOut;
     let doc, setDoc, deleteDoc, collection, onSnapshot, enableIndexedDbPersistence;
@@ -626,6 +639,11 @@
     let userId = null;
     let unsubscribeFirestore = null;
     let isOfflineMode = false;
+    
+    // 控制防抖倒數與上傳的變數
+    let countdownTimer = null; 
+    let countdownSeconds = 0;
+    let pendingSceneToSave = null; 
 
     let appState = { scenes: [], currentScene: "", data: {} };
     let currentTab = 'inventory';
@@ -640,23 +658,6 @@
     document.addEventListener('DOMContentLoaded', async () => {
       setupGlobalScannerHook();
 
-      // 🔍 偵測是否為「直接點開的 HTML 單機檔案」
-      const isLocalFile = window.location.protocol === 'file:';
-      if (isLocalFile) {
-        const alertBox = document.getElementById('local-web-alert');
-        if (alertBox) alertBox.style.display = 'block';
-
-        const googleBtn = document.getElementById('google-login-btn');
-        const googleBtnText = document.getElementById('google-btn-text');
-        if (googleBtn) {
-          googleBtn.onclick = () => { showToast('warning', '因瀏覽器安全限制，下載的檔案無法登入。請直接點選下方「進入單機模式」！'); };
-          googleBtn.style.opacity = '0.5';
-          googleBtn.style.cursor = 'not-allowed';
-          if(googleBtnText) googleBtnText.innerText = '⚠️ 單機版不支援登入';
-        }
-      }
-
-      // 🌟 動態載入 Firebase
       try {
         const fbApp = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js");
         const fbAuth = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js");
@@ -675,17 +676,15 @@
         deleteDoc = fbDb.deleteDoc;
         collection = fbDb.collection;
         onSnapshot = fbDb.onSnapshot;
-        enableIndexedDbPersistence = fbDb.enableIndexedDbPersistence; // 🌟 抓取離線快取方法
+        enableIndexedDbPersistence = fbDb.enableIndexedDbPersistence; 
 
         app = fbApp.initializeApp(firebaseConfig);
         auth = fbAuth.getAuth(app);
         db = fbDb.getFirestore(app);
         googleProvider = new GoogleAuthProvider();
 
-        // 🌟 啟動 Firestore 離線持久化 (黑科技)
         try {
           await enableIndexedDbPersistence(db);
-          console.log("Firebase 離線快取已啟用");
         } catch (err) {
           console.warn("無法啟用 Firebase 離線快取", err);
         }
@@ -702,6 +701,20 @@
           } else {
             userId = null;
             if (unsubscribeFirestore) unsubscribeFirestore();
+            
+            // 檢查是否為本地檔案，如果是的話顯示特定警告
+            const isLocalFile = window.location.protocol === 'file:';
+            if (isLocalFile) {
+              document.getElementById('local-web-alert').style.display = 'block';
+              const googleBtn = document.getElementById('google-login-btn');
+              const googleBtnText = document.getElementById('google-btn-text');
+              if (googleBtn) {
+                googleBtn.onclick = () => { showToast('warning', '因瀏覽器安全限制，單機版無法使用 Google 登入。請使用信箱登入，或前往線上網頁版！'); };
+                googleBtn.style.opacity = '0.5';
+                googleBtn.style.cursor = 'not-allowed';
+                if(googleBtnText) googleBtnText.innerText = '⚠️ 單機版不支援 Google 登入';
+              }
+            }
             showAuthScreen();
           }
         });
@@ -711,6 +724,16 @@
         isOfflineMode = true;
         document.getElementById('loading-screen').style.display = 'none';
         initLocalFallback();
+      }
+    });
+
+    // 防呆機制：關閉分頁前檢查是否有未上傳的資料
+    window.addEventListener('beforeunload', (e) => {
+      if (countdownTimer) {
+        performCloudSync(); // 盡全力觸發一次手動上傳
+        e.preventDefault();
+        e.returnValue = '尚有資料等待同步到雲端，關閉網頁可能會讓資料暫存在單機。確定要離開嗎？';
+        return e.returnValue;
       }
     });
 
@@ -735,9 +758,6 @@
     }
 
     async function loginWithEmail() {
-      const isLocalFile = window.location.protocol === 'file:';
-      if (isLocalFile) return showToast('error', '瀏覽器安全限制：下載的網頁無法連線至認證伺服器，請點選「單機模式」！');
-      
       const email = document.getElementById('auth-email-input').value;
       const pass = document.getElementById('auth-password-input').value;
       if (!email || !pass) return showToast('warning', '請輸入信箱與密碼！');
@@ -745,9 +765,6 @@
     }
 
     async function registerWithEmail() {
-      const isLocalFile = window.location.protocol === 'file:';
-      if (isLocalFile) return showToast('error', '瀏覽器安全限制：無法在本地網頁註冊帳號。');
-
       const email = document.getElementById('auth-email-input').value;
       const pass = document.getElementById('auth-password-input').value;
       if (!email || !pass) return showToast('warning', '請輸入信箱與密碼！');
@@ -788,6 +805,7 @@
     function setupFirestoreListeners() {
       if (!userId || !db) return;
       const connBadge = document.getElementById('connection-status');
+      const connText = document.getElementById('connection-status-text');
       const scenesRef = collection(db, 'users', userId, 'inventory_scenes');
       
       unsubscribeFirestore = onSnapshot(scenesRef, (snapshot) => {
@@ -821,51 +839,139 @@
           else updateSceneHeaderDropdown(); 
         }
         
-        // 🌟 更新 UI：如果在網頁版斷線，它會顯示為離線，但依然可以存檔！
-        if (connBadge) { 
+        if (connBadge && connText && !countdownTimer) { 
           if(navigator.onLine) {
-            connBadge.className = "sync-status online"; connBadge.title = "雲端同步保護中"; 
+            connBadge.className = "sync-status online"; 
+            connText.innerText = '雲端已同步';
           } else {
-            connBadge.className = "sync-status offline"; connBadge.title = "已斷線，但資料已暫存，恢復連線後將自動同步"; 
+            connBadge.className = "sync-status offline"; 
+            connText.innerText = '離線暫存中';
           }
         }
       }, (error) => {
-        if (connBadge) connBadge.className = "sync-status offline";
+        if (connBadge && connText) {
+          connBadge.className = "sync-status offline";
+          connText.innerText = '連線異常';
+        }
       });
     }
 
+    // 觸發資料存檔機制：附帶 20 秒動態倒數 UI
     async function saveSceneData(sceneName) {
       const targetScene = sceneName || appState.currentScene;
       if (!targetScene) return;
 
+      // 1. 本地端：立刻寫入 LocalStorage，確保斷電不遺失
       localStorage.setItem('local_inventory_backup', JSON.stringify(appState));
 
-      // 即使沒有網路，只要有登入 (userId 存在)，Firestore 離線快取就會幫我們暫存！
-      if (!isOfflineMode && userId && db) {
-        try {
-          const docRef = doc(db, 'users', userId, 'inventory_scenes', encodeURIComponent(targetScene));
-          await setDoc(docRef, { name: targetScene, content: appState.data[targetScene], updatedAt: Date.now() });
-        } catch(e) {
-          console.warn("雲端儲存/快取失敗，已保留單機紀錄", e);
+      // 2. 雲端端：進入 20 秒打包等待
+      if (!isOfflineMode && userId && db && navigator.onLine) {
+        pendingSceneToSave = targetScene; 
+        const connBadge = document.getElementById('connection-status');
+        const connText = document.getElementById('connection-status-text');
+        const forceSyncBtn = document.getElementById('force-sync-btn'); 
+
+        if (countdownTimer) clearInterval(countdownTimer);
+
+        countdownSeconds = 20; 
+
+        if (connBadge && connText) {
+          connBadge.className = "sync-status pending"; 
+          connText.innerText = `⏳ ${countdownSeconds}s 後上傳`;
         }
+        if (forceSyncBtn) forceSyncBtn.style.display = 'inline-block';
+
+        // 啟動每 1 秒更新一次的計時器
+        countdownTimer = setInterval(async () => {
+          countdownSeconds--;
+          if (countdownSeconds > 0) {
+            if (connText) connText.innerText = `⏳ ${countdownSeconds}s 後上傳`;
+          } else {
+            clearInterval(countdownTimer);
+            countdownTimer = null;
+            await performCloudSync();
+          }
+        }, 1000); 
       }
     }
 
-    // 監聽網路狀態變更，即時更新小綠點
+    // 實際執行雲端上傳的邏輯
+    async function performCloudSync() {
+      if (!pendingSceneToSave || !userId || !db) return;
+      
+      const targetScene = pendingSceneToSave;
+      const connBadge = document.getElementById('connection-status');
+      const connText = document.getElementById('connection-status-text');
+      const forceSyncBtn = document.getElementById('force-sync-btn');
+
+      if (countdownTimer) {
+        clearInterval(countdownTimer);
+        countdownTimer = null;
+      }
+      if (forceSyncBtn) forceSyncBtn.style.display = 'none';
+      if (connBadge && connText) {
+        connBadge.className = "sync-status pending"; 
+        connText.innerText = '上傳中...';
+      }
+
+      try {
+        const docRef = doc(db, 'users', userId, 'inventory_scenes', encodeURIComponent(targetScene));
+        await setDoc(docRef, { name: targetScene, content: appState.data[targetScene], updatedAt: Date.now() });
+        
+        if (connBadge && connText) {
+          connBadge.className = "sync-status online";
+          connText.innerText = '雲端已同步';
+        }
+      } catch(e) {
+        console.warn("雲端儲存失敗", e);
+        if (connBadge && connText) {
+          connBadge.className = "sync-status offline";
+          connText.innerText = '同步失敗';
+        }
+        if (forceSyncBtn) forceSyncBtn.style.display = 'inline-block'; 
+      }
+      
+      pendingSceneToSave = null;
+    }
+
+    // 點擊「立即同步」觸發的函式
+    function forceManualSync() {
+      if (countdownTimer || pendingSceneToSave) {
+        performCloudSync();
+        showToast('info', '已手動觸發雲端同步');
+      }
+    }
+
     window.addEventListener('online', () => {
       const badge = document.getElementById('connection-status');
-      if (badge && !isOfflineMode && userId) { badge.className = "sync-status online"; badge.title = "連線恢復，同步中..."; showToast('success', '網路已恢復，資料自動同步中！'); }
+      const text = document.getElementById('connection-status-text');
+      if (badge && text && !isOfflineMode && userId && !countdownTimer) { 
+        badge.className = "sync-status online"; 
+        text.innerText = '雲端已同步'; 
+        showToast('success', '網路已恢復，資料自動同步中！'); 
+      }
     });
+    
     window.addEventListener('offline', () => {
       const badge = document.getElementById('connection-status');
-      if (badge && !isOfflineMode && userId) { badge.className = "sync-status offline"; badge.title = "已斷線，資料自動暫存中"; showToast('warning', '網路已斷開，切換為離線暫存模式'); }
+      const text = document.getElementById('connection-status-text');
+      const forceSyncBtn = document.getElementById('force-sync-btn');
+      if (badge && text && !isOfflineMode && userId) { 
+        badge.className = "sync-status offline"; 
+        text.innerText = '離線暫存中'; 
+        if (forceSyncBtn) forceSyncBtn.style.display = 'none';
+        showToast('warning', '網路已斷開，切換為離線暫存模式'); 
+      }
     });
-
 
     function initLocalFallback() {
       document.getElementById('loading-screen').style.display = 'none';
       document.getElementById('auth-screen').style.display = 'none';
-      document.getElementById('connection-status').className = "sync-status offline";
+      
+      const badge = document.getElementById('connection-status');
+      const text = document.getElementById('connection-status-text');
+      if(badge && text) { badge.className = "sync-status offline"; text.innerText = '單機模式'; }
+
       try { const localData = localStorage.getItem('local_inventory_backup'); if (localData) appState = JSON.parse(localData); } catch(e){}
       if (appState.scenes.length === 0) {
         document.getElementById('main-app').style.display = 'none';
@@ -1485,7 +1591,7 @@
       clearHistoryLog, switchTab, setScanMode, openUseModal, openAddModal, openEditModal, closeModal, openModal, changeUseQty, 
       handleSearch, handleFilter, handleSort, handleScannerKeyPress, filterExpiringItems, openBarcodeWizard, triggerWizardCreateNew, triggerWizardLinkExisting, 
       loginWithEmail, registerWithEmail, loginWithGoogle, logoutUser, addTempBarcode, removeTempBarcode, triggerFileInput, previewLocalImage,
-      startLocalMode
+      startLocalMode, forceManualSync
     });
   </script>
 </body>
