@@ -232,9 +232,8 @@
   <!-- 登入與註冊介面 -->
   <div id="auth-screen" style="display: none;">
     <div id="local-web-alert" style="display: none; max-width: 400px; margin: 2rem auto -2rem auto; background: #e0e7ff; border: 1px solid #c7d2fe; padding: 1rem; border-radius: 12px; text-align: center;">
-      <p style="font-size: 0.85rem; color: var(--primary); font-weight: 700; margin-bottom: 0.5rem;">您目前開啟的是單機下載版 (HTML)</p>
-      <p style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 0.75rem;">強烈建議在有網路時，使用線上版以獲得完整登入體驗：</p>
-      <a href="https://tommylin06.github.io/my-inventory/" target="_blank" class="btn btn-primary" style="display: inline-flex; font-size: 0.8rem;">👉 前往 GitHub 網頁版</a>
+      <p style="font-size: 0.85rem; color: var(--primary); font-weight: 700; margin-bottom: 0.5rem;">您目前開啟的是單機下載版 (無雲端功能)</p>
+      <p style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 0.75rem;">因瀏覽器安全限制，下載的檔案無法登入帳號。請在下方點選「單機模式」使用，事後再透過 JSON 匯出功能與網頁版合併。</p>
     </div>
 
     <div class="auth-container">
@@ -253,7 +252,7 @@
       </div>
       
       <div style="display: flex; gap: 0.5rem; flex-direction: column;">
-        <button onclick="window.loginWithEmail()" class="btn btn-primary" style="width: 100%; padding: 0.75rem;">登入</button>
+        <button onclick="window.loginWithEmail()" class="btn btn-primary" style="width: 100%; padding: 0.75rem;">信箱登入</button>
         <button onclick="window.registerWithEmail()" class="btn btn-secondary" style="width: 100%; padding: 0.75rem;">註冊新帳號</button>
       </div>
 
@@ -264,7 +263,7 @@
         <span id="google-btn-text">使用 Google 帳號登入</span>
       </button>
 
-      <div class="divider" style="margin-top: 2rem;">無網路/下載檔專用</div>
+      <div class="divider" style="margin-top: 2rem;">無網路/單機下載檔專用</div>
 
       <button onclick="window.startLocalMode()" class="btn btn-emerald" style="width: 100%; padding: 0.75rem; display:flex; align-items:center; justify-content:center; gap:0.5rem">
         💻 進入本地單機模式 (免登入)
@@ -292,7 +291,7 @@
     <div style="background: #e0e7ff; color: var(--primary); width: 64px; height: 64px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1.5rem;">
       <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
     </div>
-    <h2 style="font-size: 1.4rem; font-weight: 800; margin-bottom: 0.5rem;">🎬 建立第一個場景</h2>
+    <h2 style="font-size: 1.4rem; font-weight: 800; margin-bottom: 0.5rem;">建立第一個場景</h2>
     <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1.5rem; line-height: 1.5;">
       請先輸入您的第一個儲藏場景名稱（例如：大倉庫、客廳櫃），我們將為您建立專屬的管理空間。
     </p>
@@ -416,11 +415,8 @@
         </div>
         
         <div style="background-color: #f1f5f9; padding: 1.25rem; border-radius: 16px; margin-top: 1.5rem">
-          <h3 style="font-size: 1rem; font-weight: 800; margin-bottom: 0.4rem;">📊 備份與合併資料</h3>
-          <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 1rem; line-height: 1.4;">
-            💡單機/網頁版資料合併教學：如果您曾在單機版盤點資料，請在這裡點擊「📦 匯出 JSON」。接著打開您的網頁版，在這裡點擊「📥 匯入 JSON」，系統將會智慧為您合併或覆蓋資料！
-          </p>
-          <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+          <h3 style="font-size: 1rem; font-weight: 800; margin-bottom: 0.4rem;">📊 離線備份與雲端合併同步</h3>
+          <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; margin-top: 1rem;">
             <button onclick="window.openExportModal()" class="btn btn-primary" style="font-size: 0.75rem">📦 匯出 JSON 備份檔...</button>
             <label class="btn btn-secondary" style="font-size: 0.75rem; cursor: pointer">
               📥 匯入 JSON 合併檔案
@@ -612,7 +608,7 @@
 
   <!-- JavaScript 邏輯區 -->
   <script>
-    // 🌟 改變載入方式：將靜態 Import 改為動態，避免網路受限時白畫面崩潰
+    // 🌟 動態載入 Firebase
     const firebaseConfig = {
       apiKey: "AIzaSyCY3z9TBJ5PV-c2psZ1OYSV0Y99hjhaHps",
       authDomain: "myinventory-438dc.firebaseapp.com",
@@ -625,7 +621,7 @@
     // 宣告 Firebase 變數
     let app, auth, db, googleProvider;
     let signInWithEmailAndPassword, createUserWithEmailAndPassword, GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult, signOut;
-    let doc, setDoc, deleteDoc, collection, onSnapshot;
+    let doc, setDoc, deleteDoc, collection, onSnapshot, enableIndexedDbPersistence;
 
     let userId = null;
     let unsubscribeFirestore = null;
@@ -639,7 +635,7 @@
     let scannedNewBarcodeTemp = '';
     let tempEditBarcodes = []; 
     let selectedImageBase64 = ''; 
-    let pendingImportData = null; // 用於儲存匯入時的暫存資料
+    let pendingImportData = null;
 
     document.addEventListener('DOMContentLoaded', async () => {
       setupGlobalScannerHook();
@@ -653,20 +649,19 @@
         const googleBtn = document.getElementById('google-login-btn');
         const googleBtnText = document.getElementById('google-btn-text');
         if (googleBtn) {
-          googleBtn.onclick = () => { showToast('warning', '下載的單機網頁不支援 Google 登入，請使用信箱登入或直接點選單機模式！'); };
+          googleBtn.onclick = () => { showToast('warning', '因瀏覽器安全限制，下載的檔案無法登入。請直接點選下方「進入單機模式」！'); };
           googleBtn.style.opacity = '0.5';
           googleBtn.style.cursor = 'not-allowed';
-          if(googleBtnText) googleBtnText.innerText = '⚠️ 單機版不支援 Google 登入';
+          if(googleBtnText) googleBtnText.innerText = '⚠️ 單機版不支援登入';
         }
       }
 
-      // 🌟 動態載入 Firebase，並捕捉錯誤 (防止白畫面)
+      // 🌟 動態載入 Firebase
       try {
         const fbApp = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js");
         const fbAuth = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js");
         const fbDb = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js");
         
-        // 提取方法
         signInWithEmailAndPassword = fbAuth.signInWithEmailAndPassword;
         createUserWithEmailAndPassword = fbAuth.createUserWithEmailAndPassword;
         GoogleAuthProvider = fbAuth.GoogleAuthProvider;
@@ -680,11 +675,20 @@
         deleteDoc = fbDb.deleteDoc;
         collection = fbDb.collection;
         onSnapshot = fbDb.onSnapshot;
+        enableIndexedDbPersistence = fbDb.enableIndexedDbPersistence; // 🌟 抓取離線快取方法
 
         app = fbApp.initializeApp(firebaseConfig);
         auth = fbAuth.getAuth(app);
         db = fbDb.getFirestore(app);
         googleProvider = new GoogleAuthProvider();
+
+        // 🌟 啟動 Firestore 離線持久化 (黑科技)
+        try {
+          await enableIndexedDbPersistence(db);
+          console.log("Firebase 離線快取已啟用");
+        } catch (err) {
+          console.warn("無法啟用 Firebase 離線快取", err);
+        }
 
         fbAuth.onAuthStateChanged(auth, async (user) => {
           document.getElementById('loading-screen').style.display = 'none';
@@ -731,6 +735,9 @@
     }
 
     async function loginWithEmail() {
+      const isLocalFile = window.location.protocol === 'file:';
+      if (isLocalFile) return showToast('error', '瀏覽器安全限制：下載的網頁無法連線至認證伺服器，請點選「單機模式」！');
+      
       const email = document.getElementById('auth-email-input').value;
       const pass = document.getElementById('auth-password-input').value;
       if (!email || !pass) return showToast('warning', '請輸入信箱與密碼！');
@@ -738,21 +745,25 @@
     }
 
     async function registerWithEmail() {
+      const isLocalFile = window.location.protocol === 'file:';
+      if (isLocalFile) return showToast('error', '瀏覽器安全限制：無法在本地網頁註冊帳號。');
+
       const email = document.getElementById('auth-email-input').value;
       const pass = document.getElementById('auth-password-input').value;
       if (!email || !pass) return showToast('warning', '請輸入信箱與密碼！');
       try { await createUserWithEmailAndPassword(auth, email, pass); showToast('success', '註冊成功！'); } catch (err) { showToast('error', `註冊失敗：${err.message}`); }
     }
 
-    // 🌟 已修正為強制優先使用 Popup 登入，避免 iOS Safari 跳轉登入造成無窮迴圈
     async function loginWithGoogle() {
+      const isLocalFile = window.location.protocol === 'file:';
+      if (isLocalFile) return showToast('warning', '瀏覽器安全限制：單機下載版無法使用 Google 登入。請直接點選「單機模式」。');
+
       if(isOfflineMode) return showToast('warning', '單機模式無法使用 Google 登入');
       try {
         await signInWithPopup(auth, googleProvider);
         showToast('success', 'Google 登入成功！');
       } catch (err) {
         console.error(err);
-        // 如果 Popup 被阻擋才嘗試用跳轉
         if (err.code === 'auth/popup-blocked') {
           showToast('warning', '彈出視窗被阻擋，正嘗試轉址登入...');
           await signInWithRedirect(auth, googleProvider);
@@ -810,7 +821,14 @@
           else updateSceneHeaderDropdown(); 
         }
         
-        if (connBadge) { connBadge.className = "sync-status online"; connBadge.title = "雲端同步保護中"; }
+        // 🌟 更新 UI：如果在網頁版斷線，它會顯示為離線，但依然可以存檔！
+        if (connBadge) { 
+          if(navigator.onLine) {
+            connBadge.className = "sync-status online"; connBadge.title = "雲端同步保護中"; 
+          } else {
+            connBadge.className = "sync-status offline"; connBadge.title = "已斷線，但資料已暫存，恢復連線後將自動同步"; 
+          }
+        }
       }, (error) => {
         if (connBadge) connBadge.className = "sync-status offline";
       });
@@ -822,15 +840,27 @@
 
       localStorage.setItem('local_inventory_backup', JSON.stringify(appState));
 
-      if (!isOfflineMode && userId && db && navigator.onLine) {
+      // 即使沒有網路，只要有登入 (userId 存在)，Firestore 離線快取就會幫我們暫存！
+      if (!isOfflineMode && userId && db) {
         try {
           const docRef = doc(db, 'users', userId, 'inventory_scenes', encodeURIComponent(targetScene));
           await setDoc(docRef, { name: targetScene, content: appState.data[targetScene], updatedAt: Date.now() });
         } catch(e) {
-          console.warn("雲端儲存失敗，已保留單機紀錄", e);
+          console.warn("雲端儲存/快取失敗，已保留單機紀錄", e);
         }
       }
     }
+
+    // 監聽網路狀態變更，即時更新小綠點
+    window.addEventListener('online', () => {
+      const badge = document.getElementById('connection-status');
+      if (badge && !isOfflineMode && userId) { badge.className = "sync-status online"; badge.title = "連線恢復，同步中..."; showToast('success', '網路已恢復，資料自動同步中！'); }
+    });
+    window.addEventListener('offline', () => {
+      const badge = document.getElementById('connection-status');
+      if (badge && !isOfflineMode && userId) { badge.className = "sync-status offline"; badge.title = "已斷線，資料自動暫存中"; showToast('warning', '網路已斷開，切換為離線暫存模式'); }
+    });
+
 
     function initLocalFallback() {
       document.getElementById('loading-screen').style.display = 'none';
@@ -1271,7 +1301,6 @@
       closeModal('modal-export-options'); showToast('success', `單一場景「${appState.currentScene}」資料已匯出！`);
     }
 
-    // 🌟 新增的進階 JSON 匯入邏輯
     function importJSONBackup(event) {
       const file = event.target.files[0]; if (!file) return;
       const reader = new FileReader();
@@ -1301,7 +1330,6 @@
       reader.readAsText(file);
     }
 
-    // 🌟 處理選項 (智慧合併 / 完全覆蓋 / 另存新檔)
     async function processImport(strategy) {
       if (!pendingImportData) return;
       let importedCount = 0;
