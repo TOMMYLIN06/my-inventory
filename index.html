@@ -384,7 +384,6 @@
             <select id="filter-location" onchange="window.handleFilter()" class="select-dropdown"></select>
             <select id="filter-sort" onchange="window.handleSort()" class="select-dropdown">
               <option value="default">↕️ 預設排序</option>
-              <!-- 🌟 新增的變更時間排序 -->
               <option value="updated-desc">🕒 最近掃描/變更優先</option>
               <option value="stock-asc">📈 庫存：由少到多</option>
               <option value="stock-desc">📉 庫存：由多到少</option>
@@ -416,7 +415,6 @@
           </div>
 
           <div class="barcode-input-container">
-            <!-- 🌟 結合輸入延遲處理，徹底擺脫 Enter 鍵 -->
             <input type="text" id="scanner-input" oninput="window.handleScannerBuffer(event)" placeholder="點擊畫面空白處即可掃碼..." class="large-barcode-input">
             <div class="listen-badge"><div class="pulse-dot"></div><span>免對焦掃碼中</span></div>
           </div>
@@ -458,15 +456,15 @@
           </div>
         </div>
         
-        <div style="background-color: #f1f5f9; padding: 1.25rem; border-radius: 16px; margin-top: 1.5rem">
+        <div style="background-color: #f1f5f9; padding: 1.25rem; border-radius: 16px; margin-top: 1.5rem;">
           <h3 style="font-size: 1rem; font-weight: 800; margin-bottom: 0.4rem;">📊 離線備份與雲端合併同步</h3>
           <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; margin-top: 1rem;">
-            <button onclick="window.openExportModal()" class="btn btn-primary" style="font-size: 0.75rem">📦 匯出 JSON 備份檔...</button>
-            <label class="btn btn-secondary" style="font-size: 0.75rem; cursor: pointer">
-              📥 匯入 JSON 合併檔案
+            <button onclick="window.openExportModal()" class="btn btn-primary" style="font-size: 0.75rem">📦 匯出與備份工具...</button>
+            <label class="btn btn-secondary" style="font-size: 0.75rem; cursor: pointer; border-color:var(--emerald); color:var(--emerald)">
+              📥 匯入 JSON (智慧合併)
               <input type="file" id="import-json-file" accept=".json" onchange="window.importJSONBackup(event)" style="display:none">
             </label>
-            <button onclick="window.exportExcelCSV()" class="btn btn-emerald" style="font-size: 0.75rem">📊 匯出 Excel CSV 資料表</button>
+            <button onclick="window.exportExcelCSV()" class="btn btn-secondary" style="font-size: 0.75rem">📊 匯出 CSV 資料表</button>
           </div>
         </div>
       </div>
@@ -601,12 +599,17 @@
     </div>
   </div>
 
+  <!-- 🌟 更新的 Export Modal：加入商品基本檔匯出按鈕 -->
   <div id="modal-export-options" class="modal-overlay">
     <div class="modal-box" style="max-width: 400px; text-align: center;">
       <h3 class="modal-title" style="margin-bottom: 1.5rem; border: none;">選擇備份 JSON 匯出範圍</h3>
-      <div style="display:flex; flex-direction:column; gap: 1rem;">
-        <button onclick="window.exportFullBackup()" class="btn btn-primary" style="justify-content:center; padding:1rem; font-size: 0.95rem;">📦 匯出「所有場景」 (推薦：完整備份)</button>
+      <div style="display:flex; flex-direction:column; gap: 0.75rem;">
+        <button onclick="window.exportFullBackup()" class="btn btn-primary" style="justify-content:center; padding:1rem; font-size: 0.95rem;">📦 匯出「所有場景」(完整備份)</button>
         <button onclick="window.exportCurrentScene()" class="btn btn-emerald" style="justify-content:center; padding:1rem; font-size: 0.95rem;">📄 僅匯出當前場景 (<span id="export-current-name"></span>)</button>
+        
+        <div class="divider" style="margin: 0.5rem 0;">或</div>
+        
+        <button onclick="window.exportProductMaster()" class="btn btn-secondary" style="justify-content:center; padding:1rem; font-size: 0.95rem; border-color:var(--primary); color:var(--primary)">📋 僅匯出「商品基本檔」目錄<br><span style="font-size:0.7rem; font-weight:normal; margin-top:0.25rem;">(不含庫存與紀錄，適合套用至新場景/新帳號)</span></button>
       </div>
       <button onclick="window.closeModal('modal-export-options')" class="btn btn-secondary" style="width:100%; justify-content:center; margin-top:1.5rem">取消</button>
     </div>
@@ -791,6 +794,9 @@
     }
 
     async function loginWithEmail() {
+      const isLocalFile = window.location.protocol === 'file:';
+      if (isLocalFile) return showToast('error', '瀏覽器安全限制：下載的網頁無法連線至認證伺服器，請點選「單機模式」！');
+      
       const email = document.getElementById('auth-email-input').value;
       const pass = document.getElementById('auth-password-input').value;
       if (!email || !pass) return showToast('warning', '請輸入信箱與密碼！');
@@ -798,6 +804,9 @@
     }
 
     async function registerWithEmail() {
+      const isLocalFile = window.location.protocol === 'file:';
+      if (isLocalFile) return showToast('error', '瀏覽器安全限制：無法在本地網頁註冊帳號。');
+
       const email = document.getElementById('auth-email-input').value;
       const pass = document.getElementById('auth-password-input').value;
       if (!email || !pass) return showToast('warning', '請輸入信箱與密碼！');
@@ -894,8 +903,10 @@
       const targetScene = sceneName || appState.currentScene;
       if (!targetScene) return;
 
+      // 1. 本地端：立刻寫入 LocalStorage，確保斷電不遺失
       localStorage.setItem('local_inventory_backup', JSON.stringify(appState));
 
+      // 2. 雲端端：進入 20 秒打包等待
       if (!isOfflineMode && userId && db && navigator.onLine) {
         pendingSceneToSave = targetScene; 
         const connBadge = document.getElementById('connection-status');
@@ -1076,15 +1087,13 @@
     function getSceneData() { return appState.data[appState.currentScene]; }
     function findItemById(id) { return getSceneData().items.find(i => i.id === id) || null; }
     
-    // 🌟 解決輸入法與 Enter 鍵被吃掉的核心邏輯
+    // 解決輸入法與 Enter 鍵被吃掉的核心邏輯
     function normalizeBarcode(str) {
-      // 全形轉半形，並清除空白與換行字元
       return str.replace(/[\uff01-\uff5e]/g, function(ch) {
         return String.fromCharCode(ch.charCodeAt(0) - 0xfee0);
       }).replace(/\u3000/g, ' ').replace(/[\r\n]+/g, '').trim();
     }
 
-    // 🌟 利用 0.15 秒的時間差自動抓取掃描結果，不需依賴 Enter 鍵！
     function handleScannerBuffer(e) {
       if (inputBufferTimeout) clearTimeout(inputBufferTimeout);
       
@@ -1094,15 +1103,13 @@
         if (val) {
           processScannedBarcode(val);
         }
-        e.target.value = ''; // 瞬間清空，等待下一次掃描
+        e.target.value = ''; 
       }, 150); 
     }
 
-    // 全域確保隱藏的掃描框隨時被 focus
     function setupGlobalScannerHook() {
       setInterval(() => {
         const activeTag = document.activeElement ? document.activeElement.tagName : '';
-        // 只要不是在打字輸入，就把焦點搶回隱藏的掃描框
         if (!['INPUT', 'TEXTAREA', 'SELECT'].includes(activeTag) && !document.querySelector('.modal-overlay.active')) {
           const hiddenInput = document.getElementById('global-scanner-input');
           if (hiddenInput && document.activeElement !== hiddenInput) hiddenInput.focus();
@@ -1110,7 +1117,6 @@
       }, 500);
     }
     
-    // 為了相容原本的輸入框，若有按下 Enter 也能順利處理
     function handleScannerKeyPress(e) {
       if (e.key === 'Enter' || e.keyCode === 13) { 
         e.preventDefault(); 
@@ -1157,12 +1163,10 @@
         if (inBtn) inBtn.className = 'mode-switch-btn'; if (outBtn) outBtn.className = 'mode-switch-btn active-out'; if (scanInput) scanInput.className = 'large-barcode-input mode-out';
         if (floatToggle) { floatToggle.className = 'floating-scan-toggle mode-out'; floatIcon.innerText = '📤'; floatText.innerText = '掃碼: 領用 (-1)'; }
       }
-      // 將焦點交給隱藏全域框
       const hiddenInput = document.getElementById('global-scanner-input');
       if (hiddenInput) hiddenInput.focus();
     }
 
-    // 🌟 切換浮動掃碼按鈕
     function toggleFloatingScanMode() {
       const newMode = currentScanMode === 'in' ? 'out' : 'in';
       setScanMode(newMode);
@@ -1195,20 +1199,19 @@
       `;
     }
     
-    // 🌟 更新處理掃描邏輯，加入時間戳與動畫觸發
     async function processScannedBarcode(barcode) {
       const lookup = findItemAndBarcodeMapping(barcode); const data = getSceneData();
       if (currentScanMode === 'in') {
         if (lookup) {
           const { item, match } = lookup; item.stock += match.qty;
-          item.lastUpdatedAt = Date.now(); // 記錄變更時間
-          highlightItemId = item.id; highlightType = 'in'; // 準備特效
+          item.lastUpdatedAt = Date.now(); 
+          highlightItemId = item.id; highlightType = 'in'; 
 
           data.historyLogs.unshift({ id: `h_${Date.now()}`, time: getFormattedTime(), itemName: item.name, type: 'in', quantity: match.qty, note: `條碼槍自動加庫存 (+${match.qty})` });
           updateScanFeedbackHTML('success', barcode, item, `自動辨識包裝：「${match.name}」，已加 ${match.qty} 份在庫！`);
           showToast('success', `「${item.name}」已辨識為 ${match.name} 補貨 +${match.qty} 份！`);
           
-          if(currentTab === 'inventory') document.getElementById('filter-sort').value = 'updated-desc'; // 自動切換為最新變更優先
+          if(currentTab === 'inventory') document.getElementById('filter-sort').value = 'updated-desc'; 
           renderAll(); await saveSceneData(); 
         } else { scannedNewBarcodeTemp = barcode; openBarcodeWizard(barcode); }
       } else {
@@ -1379,7 +1382,6 @@
       const dashExpiring = document.getElementById('dash-expiring'); if (dashExpiring) { dashExpiring.innerText = `${expiringCount} 件`; dashExpiring.className = expiringCount > 0 ? "badge-expiring" : "badge-expiring safe"; }
     }
 
-    // 🌟 升級版：支援變更時間排序與特效渲染
     function renderInventoryGrid() {
       const container = document.getElementById('inventory-grid-container'); if (!container) return;
       const data = getSceneData();
@@ -1419,7 +1421,6 @@
         else if (expStatus === 'expiring') { expBadge = `<div class="expired-badge" style="background-color:var(--amber);">⏳ 即期</div>`; dateHtml = `<span style="color:var(--amber); font-weight:800;">即將到期: ${item.expiryDate}</span>`; }
         else if (item.expiryDate) { dateHtml = `<span style="color:var(--text-muted);">📅 期限: ${item.expiryDate}</span>`; }
 
-        // 🌟 添加動畫 Class
         let animationClass = '';
         if (item.id === highlightItemId) {
           animationClass = highlightType === 'in' ? 'flash-highlight-in' : 'flash-highlight-out';
@@ -1457,7 +1458,6 @@
         `;
       }).join('');
 
-      // 清空 Highlight，讓它只閃一次
       highlightItemId = null;
     }
 
@@ -1508,12 +1508,49 @@
       closeModal('modal-export-options'); showToast('success', `單一場景「${appState.currentScene}」資料已匯出！`);
     }
 
+    // 🌟 新增：匯出商品基本檔 (不含數量與歷史)
+    function exportProductMaster() {
+      const data = getSceneData();
+      const masterData = {
+        type: 'product_master',
+        sourceScene: appState.currentScene,
+        categories: data.categories,
+        locations: data.locations,
+        items: data.items.map(item => ({
+          ...item,
+          stock: 0,
+          expiryDate: ''
+        }))
+      };
+      const blob = new Blob([JSON.stringify(masterData, null, 2)], { type: 'application/json' });
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.download = `商品基本檔目錄_${appState.currentScene}_${new Date().toISOString().slice(0,10)}.json`;
+      link.click();
+      closeModal('modal-export-options');
+      showToast('success', '商品基本檔已匯出！');
+    }
+
     function importJSONBackup(event) {
       const file = event.target.files[0]; if (!file) return;
       const reader = new FileReader();
       reader.onload = async (e) => {
         try {
           const parsed = JSON.parse(e.target.result); 
+
+          // 🌟 處理商品基本檔的匯入
+          if (parsed.type === 'product_master') {
+            document.getElementById('confirm-title').innerText = '匯入商品基本檔目錄';
+            document.getElementById('confirm-text').innerHTML = `即將把商品目錄（包含條碼、照片、多重包裝等）<br>合併匯入至當前場景：<strong style="color:var(--primary)">${appState.currentScene}</strong>。<br><br>這<b>不會</b>覆蓋或影響您目前的庫存數量與歷史紀錄！`;
+            document.getElementById('confirm-yes-btn').onclick = async () => {
+              closeModal('modal-confirm');
+              processMasterDataImport(parsed);
+            };
+            openModal('modal-confirm');
+            event.target.value = '';
+            return;
+          }
+
           let scenesToImport = [];
           if (parsed.scenes && Array.isArray(parsed.scenes)) { 
             parsed.scenes.forEach(s => { if (parsed.data && parsed.data[s]) scenesToImport.push({ name: s, data: parsed.data[s] }); }); 
@@ -1535,6 +1572,53 @@
         event.target.value = '';
       };
       reader.readAsText(file);
+    }
+
+    // 🌟 執行商品基本檔合併
+    async function processMasterDataImport(parsed) {
+      const currentData = getSceneData();
+      let newItemsCount = 0;
+      let updatedItemsCount = 0;
+
+      if (parsed.categories) {
+        parsed.categories.forEach(c => { if (!currentData.categories.includes(c)) currentData.categories.push(c); });
+      }
+      if (parsed.locations) {
+        parsed.locations.forEach(l => { if (!currentData.locations.includes(l)) currentData.locations.push(l); });
+      }
+
+      if (parsed.items && Array.isArray(parsed.items)) {
+        parsed.items.forEach(incomingItem => {
+          const existingItemIndex = currentData.items.findIndex(i => i.barcode === incomingItem.barcode);
+          if (existingItemIndex >= 0) {
+            // 只更新基本資訊，保留原始 id、stock、expiryDate
+            const existingItem = currentData.items[existingItemIndex];
+            currentData.items[existingItemIndex] = {
+              ...existingItem,
+              name: incomingItem.name,
+              category: incomingItem.category,
+              location: incomingItem.location,
+              minStock: incomingItem.minStock,
+              image: incomingItem.image,
+              barcodes: incomingItem.barcodes || existingItem.barcodes,
+              lastUpdatedAt: Date.now()
+            };
+            updatedItemsCount++;
+          } else {
+            // 新商品，庫存設為 0
+            incomingItem.id = `item_${Date.now()}_${Math.floor(Math.random()*1000)}`;
+            incomingItem.stock = 0;
+            incomingItem.expiryDate = '';
+            incomingItem.lastUpdatedAt = Date.now();
+            currentData.items.push(incomingItem);
+            newItemsCount++;
+          }
+        });
+      }
+
+      renderAll();
+      await saveSceneData();
+      showToast('success', `商品基本檔匯入成功！新增 ${newItemsCount} 款，更新 ${updatedItemsCount} 款商品資訊。`);
     }
 
     async function processImport(strategy) {
@@ -1611,7 +1695,6 @@
       document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
       document.getElementById(`tab-${tabId}`)?.classList.add('active'); document.getElementById(`nav-${tabId}`)?.classList.add('active');
 
-      // 控制浮動掃碼按鈕是否顯示
       const floatToggle = document.getElementById('floating-scan-toggle');
       if (tabId === 'inventory') { floatToggle.style.display = 'flex'; } 
       else { floatToggle.style.display = 'none'; }
@@ -1699,6 +1782,7 @@
       clearHistoryLog, switchTab, setScanMode, toggleFloatingScanMode, openUseModal, openAddModal, openEditModal, closeModal, openModal, changeUseQty, 
       handleSearch, handleFilter, handleSort, handleScannerKeyPress, handleScannerBuffer, filterExpiringItems, openBarcodeWizard, triggerWizardCreateNew, triggerWizardLinkExisting, 
       loginWithEmail, registerWithEmail, loginWithGoogle, logoutUser, addTempBarcode, removeTempBarcode, triggerFileInput, previewLocalImage,
+      exportProductMaster,
       startLocalMode, forceManualSync
     });
   </script>
